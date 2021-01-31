@@ -76,6 +76,10 @@ async function _inheritExec(
 
   const { code } = await child.status();
 
+  child.stdout!.close();
+  child.stderr!.close();
+  child.close();
+
   return code;
 }
 
@@ -141,6 +145,9 @@ export async function captureExec(
       `Command return non-zero status of: ${code}. Captured stdout: ${captured}`,
     );
   }
+
+  child.stderr!.close();
+  child.close();
 
   return new TextDecoder().decode(captured);
 }
