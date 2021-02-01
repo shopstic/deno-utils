@@ -40,47 +40,55 @@ async function _inheritExec(
     stderr: ignoreStderr ? "null" : "piped",
   });
 
-  if (typeof stdin === "string") {
-    await Deno.writeAll(child.stdin!, new TextEncoder().encode(stdin));
-    child.stdin!.close();
-  } else if (typeof stdin === "object") {
-    await Deno.copy(stdin as Deno.Reader, child.stdin!);
-    child.stdin!.close();
+  try {
+    const stdinPromise = (() => {
+      if (typeof stdin === "string") {
+        return Deno.writeAll(child.stdin!, new TextEncoder().encode(stdin))
+          .finally(() => child.stdin!.close());
+      } else if (typeof stdin === "object") {
+        return Deno.copy(stdin as Deno.Reader, child.stdin!)
+          .then(() => {})
+          .finally(() => child.stdin!.close());
+      } else {
+        return Promise.resolve();
+      }
+    })();
+
+    const stdoutPrefix = stdoutTag !== undefined ? stdoutTag + " " : "";
+    const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
+
+    const stdoutPromise = ignoreStdout ? Promise.resolve() : (async () => {
+      for await (const line of readLines(child.stdout!)) {
+        const printableLine = stripAnsi(line);
+        if (printableLine.length > 0) {
+          console.log(`${stdoutPrefix}${printableLine}`);
+        }
+      }
+    })();
+
+    const stderrPromise = ignoreStderr ? Promise.resolve() : (async () => {
+      for await (const line of readLines(child.stderr!)) {
+        const printableLine = stripAnsi(line);
+        if (printableLine.length > 0) {
+          console.error(`${stderrPrefix}${printableLine}`);
+        }
+      }
+    })();
+
+    await Promise.all([
+      stdinPromise,
+      stdoutPromise,
+      stderrPromise,
+    ]);
+
+    const { code } = await child.status();
+
+    return code;
+  } finally {
+    child.stdout!.close();
+    child.stderr!.close();
+    child.close();
   }
-
-  const stdoutPrefix = stdoutTag !== undefined ? stdoutTag + " " : "";
-  const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
-
-  const stdoutPromise = ignoreStdout ? Promise.resolve() : (async () => {
-    for await (const line of readLines(child.stdout!)) {
-      const printableLine = stripAnsi(line);
-      if (printableLine.length > 0) {
-        console.log(`${stdoutPrefix}${printableLine}`);
-      }
-    }
-  })();
-
-  const stderrPromise = ignoreStderr ? Promise.resolve() : (async () => {
-    for await (const line of readLines(child.stderr!)) {
-      const printableLine = stripAnsi(line);
-      if (printableLine.length > 0) {
-        console.error(`${stderrPrefix}${printableLine}`);
-      }
-    }
-  })();
-
-  await Promise.all([
-    stdoutPromise,
-    stderrPromise,
-  ]);
-
-  const { code } = await child.status();
-
-  child.stdout!.close();
-  child.stderr!.close();
-  child.close();
-
-  return code;
 }
 
 export function captureExitCodeExec(
@@ -115,39 +123,45 @@ export async function captureExec(
     stderr: "piped",
   });
 
-  if (typeof stdin === "string") {
-    await Deno.writeAll(child.stdin!, new TextEncoder().encode(stdin));
-    child.stdin!.close();
-  } else if (typeof stdin === "object") {
-    await Deno.copy(stdin as Deno.Reader, child.stdin!);
-    child.stdin!.close();
-  }
-
-  const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
-
-  const stderrPromise = (async () => {
-    for await (const line of readLines(child.stderr!)) {
-      const printableLine = stripAnsi(line);
-      if (printableLine.length > 0) {
-        console.error(`${stderrPrefix}${printableLine}`);
+  try {
+    const stdinPromise = (() => {
+      if (typeof stdin === "string") {
+        return Deno.writeAll(child.stdin!, new TextEncoder().encode(stdin))
+          .finally(() => child.stdin!.close());
+      } else if (typeof stdin === "object") {
+        return Deno.copy(stdin as Deno.Reader, child.stdin!)
+          .then(() => {})
+          .finally(() => child.stdin!.close());
+      } else {
+        return Promise.resolve();
       }
+    })();
+
+    const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
+
+    const stderrPromise = (async () => {
+      for await (const line of readLines(child.stderr!)) {
+        const printableLine = stripAnsi(line);
+        if (printableLine.length > 0) {
+          console.error(`${stderrPrefix}${printableLine}`);
+        }
+      }
+    })();
+
+    const stdoutPromise = child.output();
+    await Promise.all([stdinPromise, stderrPromise]);
+
+    const { code } = await child.status();
+    const captured = await stdoutPromise;
+
+    if (code !== 0) {
+      throw new Error(
+        `Command return non-zero status of: ${code}. Captured stdout: ${captured}`,
+      );
     }
-  })();
-
-  const stdoutPromise = child.output();
-  await stderrPromise;
-
-  const { code } = await child.status();
-  const captured = await stdoutPromise;
-
-  if (code !== 0) {
-    throw new Error(
-      `Command return non-zero status of: ${code}. Captured stdout: ${captured}`,
-    );
+    return new TextDecoder().decode(captured);
+  } finally {
+    child.stderr!.close();
+    child.close();
   }
-
-  child.stderr!.close();
-  child.close();
-
-  return new TextDecoder().decode(captured);
 }
