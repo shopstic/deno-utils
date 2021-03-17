@@ -64,7 +64,7 @@ const testSchema = {
 Deno.test("validateDefinition should fail on invalid value", () => {
   const result = validateDefinition({
     schema: testSchema,
-    definition: "#/definitions/foo",
+    definition: "foo",
     value: {
       bar: 123,
     },
@@ -79,7 +79,7 @@ Deno.test("validateDefinition should throw on unknown definition reference", () 
   assertThrows(() => {
     validateDefinition({
       schema: testSchema,
-      definition: "#/definitions/bar",
+      definition: "bar",
       value: {
         bar: 123,
       },
@@ -95,7 +95,7 @@ Deno.test("validateDefinition should succeed", () => {
   };
   const result = validateDefinition({
     schema: testSchema,
-    definition: "#/definitions/foo",
+    definition: "foo",
     value,
     options: { allErrors: true },
   });

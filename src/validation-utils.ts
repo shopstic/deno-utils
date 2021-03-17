@@ -46,6 +46,36 @@ export function validate<T extends TStatic>(
   };
 }
 
+export function createDefinitionValidator<T>(
+  { schema, definition, options = { allErrors: true } }: {
+    schema: JsonSchemaDefinitions;
+    definition: string;
+    options?: Options;
+  },
+): (value: unknown) => ValidationResult<T> {
+  const ajv = new Ajv(options);
+  ajv.addSchema(schema);
+  const validate = ajv.getSchema(`#/definitions/${definition}`);
+
+  if (!validate) {
+    throw new Error(`Definition ${definition} does not exist in schema`);
+  }
+
+  return (value: unknown) => {
+    if (!validate(value)) {
+      return {
+        isSuccess: false,
+        errors: validate.errors!,
+      };
+    }
+
+    return {
+      isSuccess: true,
+      value: value as T,
+    };
+  };
+}
+
 export function validateDefinition<T>(
   { schema, definition, value, options = { allErrors: true } }: {
     schema: JsonSchemaDefinitions;
@@ -54,23 +84,5 @@ export function validateDefinition<T>(
     options?: Options;
   },
 ): ValidationResult<T> {
-  const ajv = new Ajv(options);
-  ajv.addSchema(schema);
-  const validate = ajv.getSchema(definition);
-
-  if (!validate) {
-    throw new Error(`Definition ${definition} does not exist in schema`);
-  }
-
-  if (!validate(value)) {
-    return {
-      isSuccess: false,
-      errors: validate.errors!,
-    };
-  }
-
-  return {
-    isSuccess: true,
-    value: value as T,
-  };
+  return createDefinitionValidator<T>({ schema, definition, options })(value);
 }
