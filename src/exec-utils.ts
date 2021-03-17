@@ -1,4 +1,4 @@
-import { readLines } from "https://deno.land/std@0.85.0/io/bufio.ts";
+import { readLines } from "https://deno.land/std@0.90.0/io/bufio.ts";
 
 const ansiPattern = [
   "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",

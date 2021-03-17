@@ -5,8 +5,9 @@ import {
 import {
   assert,
   assertEquals,
-} from "https://deno.land/std@0.85.0/testing/asserts.ts";
-import { validate } from "./validation-utils.ts";
+  assertThrows,
+} from "https://deno.land/std@0.90.0/testing/asserts.ts";
+import { validate, validateDefinition } from "./validation-utils.ts";
 
 const schema = Type.Object({
   foo: Type.String(),
@@ -38,4 +39,67 @@ Deno.test("validate error", () => {
 
   assert(!result.isSuccess);
   assert("errors" in result && result.errors.length > 0);
+});
+
+const testSchema = {
+  definitions: {
+    foo: {
+      type: "object",
+      required: [
+        "foo",
+      ],
+      properties: {
+        foo: {
+          type: "string",
+        },
+        bar: {
+          type: "boolean",
+        },
+      },
+    },
+  },
+  $schema: "http://json-schema.org/draft-07/schema",
+};
+
+Deno.test("validateDefinition should fail on invalid value", () => {
+  const result = validateDefinition({
+    schema: testSchema,
+    definition: "#/definitions/foo",
+    value: {
+      bar: 123,
+    },
+    options: { allErrors: true },
+  });
+
+  assert(!result.isSuccess);
+  assert("errors" in result && result.errors.length > 0);
+});
+
+Deno.test("validateDefinition should throw on unknown definition reference", () => {
+  assertThrows(() => {
+    validateDefinition({
+      schema: testSchema,
+      definition: "#/definitions/bar",
+      value: {
+        bar: 123,
+      },
+      options: { allErrors: true },
+    });
+  });
+});
+
+Deno.test("validateDefinition should succeed", () => {
+  const value = {
+    foo: "good",
+    bar: true,
+  };
+  const result = validateDefinition({
+    schema: testSchema,
+    definition: "#/definitions/foo",
+    value,
+    options: { allErrors: true },
+  });
+
+  assert(result.isSuccess);
+  assert(result.value == value);
 });

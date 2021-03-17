@@ -1,7 +1,7 @@
 import {
   assertEquals,
   assertThrowsAsync,
-} from "https://deno.land/std@0.85.0/testing/asserts.ts";
+} from "https://deno.land/std@0.90.0/testing/asserts.ts";
 import { captureExec, inheritExec } from "./exec-utils.ts";
 
 Deno.test("captureExec", async () => {

@@ -2,8 +2,10 @@ import {
   Static,
   TStatic,
 } from "https://raw.githubusercontent.com/shopstic/typebox/0.10.1/src/typebox.ts";
-import Ajv from "https://cdn.skypack.dev/ajv@6.12.6";
-import type { ErrorObject } from "https://raw.githubusercontent.com/ajv-validator/ajv/v6.12.6/lib/ajv.d.ts";
+import Ajv, {
+  ErrorObject,
+  Options,
+} from "https://cdn.skypack.dev/ajv@7.2.1?dts";
 
 export interface ValidationFailure {
   isSuccess: false;
@@ -15,29 +17,60 @@ export interface ValidationSuccess<V> {
   value: V;
 }
 
+export interface JsonSchemaDefinitions {
+  definitions: unknown;
+  $schema: string;
+}
+
 export type ValidationResult<V> = ValidationFailure | ValidationSuccess<V>;
 
 export function validate<T extends TStatic>(
   schema: T,
-  // deno-lint-ignore no-explicit-any
-  value: any,
-  coerceTypes: boolean | "array" = false,
+  value: unknown,
+  options?: Options,
 ): ValidationResult<Static<T>> {
-  // @ts-ignore No type checking, deliberately any
-  const ajv = new Ajv({ allErrors: true, coerceTypes });
-  // @ts-ignore No type checking, deliberately any
-  const validation = ajv.compile(schema);
+  const ajv = new Ajv(options || { allErrors: true });
+  // deno-lint-ignore no-explicit-any
+  const validation = ajv.compile(schema as any);
 
   if (!validation(value)) {
     return {
       isSuccess: false,
-      // @ts-ignore No type checking, deliberately any
-      errors: validation.errors,
+      errors: validation.errors!,
     };
   }
 
   return {
     isSuccess: true,
     value: value as Static<T>,
+  };
+}
+
+export function validateDefinition<T>(
+  { schema, definition, value, options = { allErrors: true } }: {
+    schema: JsonSchemaDefinitions;
+    definition: string;
+    value: unknown;
+    options?: Options;
+  },
+): ValidationResult<T> {
+  const ajv = new Ajv(options);
+  ajv.addSchema(schema);
+  const validate = ajv.getSchema(definition);
+
+  if (!validate) {
+    throw new Error(`Definition ${definition} does not exist in schema`);
+  }
+
+  if (!validate(value)) {
+    return {
+      isSuccess: false,
+      errors: validate.errors!,
+    };
+  }
+
+  return {
+    isSuccess: true,
+    value: value as T,
   };
 }
