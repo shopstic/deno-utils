@@ -51,7 +51,6 @@ jobs:
         if: github.ref == 'refs/heads/main'
         env:
           SHELL_IMAGE: ${{ needs.build-env.outputs.image }}
-          GITHUB_SHA: ${{ github.sha }}
         run: |-
           cat <<EOF | docker run \
             --workdir /repo \
