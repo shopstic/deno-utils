@@ -2,7 +2,7 @@ import {
   Static,
   TObject,
   TProperties,
-} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.2/src/typebox.ts";
+} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.3/src/typebox.ts";
 import { parse as parseCliArgs } from "https://deno.land/std@0.92.0/flags/mod.ts";
 import { validate } from "./validation-utils.ts";
 

@@ -1,7 +1,7 @@
 import {
   Static,
   TSchema,
-} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.2/src/typebox.ts";
+} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.3/src/typebox.ts";
 import Ajv, {
   ErrorObject,
   Options,
