@@ -1,15 +1,65 @@
-name: CI
+name: CI Workflow
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    container: shopstic/deno:1.8.3
+  build-env:
+    name: Build CI environment image
+    runs-on: ubuntu-20.04
+    outputs:
+      image: ${{ steps.buildkit.outputs.image }}:${{ steps.buildkit.outputs.tag }}    
     steps:
       - uses: actions/checkout@v2
-      - run: ./ci.sh
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - run: chmod +r ~/.docker/config.json
+
+      - name: Build and push shell Docker image
+        id: buildkit
+        uses: shopstic/buildkit-action@1.0.5
+        with:
+          context: ${{ github.workspace }}/images/shell
+          image: ghcr.io/shopstic/deno-utils-ci
+          tag: ${{ hashFiles('images/shell/*') }}
+          skipIfExists: true
+
+  test:
+    name: Run tests
+    needs: build-env
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Run tests
+        if: github.ref == 'refs/heads/main'
+        env:
+          SHELL_IMAGE: ${{ needs.build-env.outputs.image }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |-
+          cat <<EOF | docker run \
+            --workdir /repo \
+            -i \
+            --rm \
+            -v "${GITHUB_WORKSPACE}:/repo" \
+            "${SHELL_IMAGE}" \
+            bash -l
+          set -euo pipefail
+          ./ci.sh
+          EOF
