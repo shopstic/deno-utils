@@ -85,8 +85,14 @@ async function _inheritExec(
 
     return code;
   } finally {
-    child.stdout!.close();
-    child.stderr!.close();
+    if (!ignoreStdout) {
+      child.stdout!.close();
+    }
+
+    if (!ignoreStderr) {
+      child.stderr!.close();
+    }
+
     child.close();
   }
 }
