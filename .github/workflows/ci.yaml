@@ -1,9 +1,13 @@
 name: CI Workflow
 
 on:
-  pull_request:
   push:
+    branches:
+      - '*'
     tags-ignore:
+      - '*'
+  pull_request:
+    branches:
       - '*'
 
 defaults:
