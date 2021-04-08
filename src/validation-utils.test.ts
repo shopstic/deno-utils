@@ -1,12 +1,12 @@
 import {
   Static,
   Type,
-} from "https://raw.githubusercontent.com/shopstic/typebox/0.10.1/src/typebox.ts";
+} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.2/src/typebox.ts";
 import {
   assert,
   assertEquals,
   assertThrows,
-} from "https://deno.land/std@0.90.0/testing/asserts.ts";
+} from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import { validate, validateDefinition } from "./validation-utils.ts";
 
 const schema = Type.Object({

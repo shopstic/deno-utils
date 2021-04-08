@@ -1,11 +1,12 @@
 import {
   Static,
-  TStatic,
-} from "https://raw.githubusercontent.com/shopstic/typebox/0.10.1/src/typebox.ts";
+  TSchema,
+} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.2/src/typebox.ts";
 import Ajv, {
   ErrorObject,
   Options,
-} from "https://cdn.skypack.dev/ajv@7.2.1?dts";
+} from "https://cdn.skypack.dev/ajv@8.0.5?dts";
+import addFormats from "https://cdn.skypack.dev/ajv-formats@2.0.2?dts";
 
 export interface ValidationFailure {
   isSuccess: false;
@@ -24,25 +25,37 @@ export interface JsonSchemaDefinitions {
 
 export type ValidationResult<V> = ValidationFailure | ValidationSuccess<V>;
 
-export function validate<T extends TStatic>(
+export function validate<T extends TSchema>(
   schema: T,
   value: unknown,
-  options?: Options,
+  options: Options = { allErrors: true },
 ): ValidationResult<Static<T>> {
-  const ajv = new Ajv(options || { allErrors: true });
-  // deno-lint-ignore no-explicit-any
-  const validation = ajv.compile(schema as any);
+  return createValidator(schema, options)(value);
+}
 
-  if (!validation(value)) {
+export function createValidator<T extends TSchema>(
+  schema: T,
+  options: Options = { allErrors: true },
+): (value: unknown) => ValidationResult<Static<T>> {
+  const ajv = new Ajv(options);
+  ajv.addKeyword("kind");
+  ajv.addKeyword("modifier");
+  addFormats(ajv);
+
+  const validate = ajv.compile(schema);
+
+  return (value: unknown) => {
+    if (!validate(value)) {
+      return {
+        isSuccess: false,
+        errors: validate.errors!,
+      };
+    }
+
     return {
-      isSuccess: false,
-      errors: validation.errors!,
+      isSuccess: true,
+      value: value as Static<T>,
     };
-  }
-
-  return {
-    isSuccess: true,
-    value: value as Static<T>,
   };
 }
 
@@ -54,7 +67,12 @@ export function createDefinitionValidator<T>(
   },
 ): (value: unknown) => ValidationResult<T> {
   const ajv = new Ajv(options);
+  ajv.addKeyword("kind");
+  ajv.addKeyword("modifier");
+  addFormats(ajv);
+
   ajv.addSchema(schema);
+
   const validate = ajv.getSchema(`#/definitions/${definition}`);
 
   if (!validate) {
