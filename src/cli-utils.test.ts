@@ -1,6 +1,6 @@
-import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
-import { Type } from "https://raw.githubusercontent.com/shopstic/typebox/0.16.3/src/typebox.ts";
 import { CliProgram, createCliAction, ExitCode } from "./cli-utils.ts";
+import { assertEquals } from "./deps/std-testing.ts";
+import { Type } from "./deps/typebox.ts";
 
 Deno.test({
   name: "test CliProgram",

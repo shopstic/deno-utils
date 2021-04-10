@@ -1,5 +1,4 @@
-import { deferred } from "https://deno.land/std@0.92.0/async/deferred.ts";
-import { delay } from "https://deno.land/std@0.92.0/async/delay.ts";
+import { deferred, delay } from "./deps/std-async.ts";
 
 export { deferred, delay };
 

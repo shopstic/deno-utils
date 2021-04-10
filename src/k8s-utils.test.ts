@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.92.0/testing/asserts.ts";
+import { assertEquals } from "./deps/std-testing.ts";
 import { createK8sNamespace } from "./k8s-utils.ts";
 
 Deno.test("K8s createK8sNamespace", () => {

@@ -1,9 +1,5 @@
-import { deferred } from "https://deno.land/std@0.92.0/async/deferred.ts";
-import {
-  assertEquals,
-  assertThrowsAsync,
-} from "https://deno.land/std@0.92.0/testing/asserts.ts";
-import { memoizePromise, timeoutPromise } from "./async-utils.ts";
+import { deferred, memoizePromise, timeoutPromise } from "./async-utils.ts";
+import { assertEquals, assertThrowsAsync } from "./deps/std-testing.ts";
 
 Deno.test("timeoutPromise should time out", async () => {
   const promise = deferred<number>();

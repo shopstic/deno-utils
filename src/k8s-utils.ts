@@ -1,32 +1,33 @@
-import type { IoK8sApiCoreV1Secret } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Secret.ts";
-import type { IoK8sApiCoreV1ConfigMap } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1ConfigMap.ts";
-import type { IoK8sApiAppsV1Deployment } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiAppsV1Deployment.ts";
-import type { IoK8sApiAppsV1DaemonSet } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiAppsV1DaemonSet.ts";
-import type { IoK8sApiAppsV1StatefulSet } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiAppsV1StatefulSet.ts";
-import type { IoK8sApiBatchV1Job } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiBatchV1Job.ts";
-import type { IoK8sApiExtensionsV1beta1Ingress } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiExtensionsV1beta1Ingress.ts";
-import type { IoK8sApiCoreV1PersistentVolume } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1PersistentVolume.ts";
-import type { IoK8sApiCoreV1PersistentVolumeClaim } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1PersistentVolumeClaim.ts";
-import type { IoK8sApiStorageV1StorageClass } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiStorageV1StorageClass.ts";
-import type { IoK8sApiRbacV1Role } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiRbacV1Role.ts";
-import type { IoK8sApiRbacV1RoleBinding } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiRbacV1RoleBinding.ts";
-import type { IoK8sApiRbacV1ClusterRole } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiRbacV1ClusterRole.ts";
-import type { IoK8sApiRbacV1ClusterRoleBinding } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiRbacV1ClusterRoleBinding.ts";
-import type { IoK8sApiCoreV1ServiceAccount } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1ServiceAccount.ts";
-import type { IoK8sApiCoreV1Service } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Service.ts";
-import type { IoK8sApiCoreV1Namespace } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Namespace.ts";
-import type { IoK8sApiCoreV1Container } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Container.ts";
-import { IoK8sApiCoreV1Volume } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Volume.ts";
-import { IoK8sApiCoreV1VolumeMount } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1VolumeMount.ts";
-import { IoK8sApiCoreV1ContainerPort } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1ContainerPort.ts";
-import { IoK8sApiCoreV1Probe } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Probe.ts";
-import { IoK8sApiCoreV1EnvVar } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1EnvVar.ts";
+import type {
+  IoK8sApiAppsV1DaemonSet,
+  IoK8sApiAppsV1Deployment,
+  IoK8sApiAppsV1StatefulSet,
+  IoK8sApiBatchV1Job,
+  IoK8sApiCoreV1ConfigMap,
+  IoK8sApiCoreV1Container,
+  IoK8sApiCoreV1Namespace,
+  IoK8sApiCoreV1PersistentVolume,
+  IoK8sApiCoreV1PersistentVolumeClaim,
+  IoK8sApiCoreV1Secret,
+  IoK8sApiCoreV1Service,
+  IoK8sApiCoreV1ServiceAccount,
+  IoK8sApiExtensionsV1beta1Ingress,
+  IoK8sApiRbacV1ClusterRole,
+  IoK8sApiRbacV1ClusterRoleBinding,
+  IoK8sApiRbacV1Role,
+  IoK8sApiRbacV1RoleBinding,
+  IoK8sApiStorageV1StorageClass,
+} from "./deps/k8s-api.ts";
 import {
-  TObject,
-  TProperties,
-  Type,
-} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.3/src/typebox.ts";
-import type { Static } from "https://raw.githubusercontent.com/shopstic/typebox/0.16.3/src/typebox.ts";
+  IoK8sApiCoreV1ContainerPort,
+  IoK8sApiCoreV1EnvVar,
+  IoK8sApiCoreV1Probe,
+  IoK8sApiCoreV1Volume,
+  IoK8sApiCoreV1VolumeMount,
+} from "./deps/k8s-api.ts";
+
+import type { Static, TObject, TProperties } from "./deps/typebox.ts";
+import { Type } from "./deps/typebox.ts";
 
 function RelaxedObject<T extends TProperties>(
   properties: T,
