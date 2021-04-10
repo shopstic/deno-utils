@@ -1,43 +1,37 @@
+import { deferred } from "https://deno.land/std@0.92.0/async/deferred.ts";
 import {
-  assert,
   assertEquals,
   assertThrowsAsync,
 } from "https://deno.land/std@0.92.0/testing/asserts.ts";
 import * as Async from "./async-utils.ts";
 
-Deno.test("Async.delay", async () => {
-  const start = Date.now();
-  await Async.delay(100);
-  assert(Date.now() - start >= 100);
-});
-
 Deno.test("Async.timeout should time out", async () => {
-  const controller = Async.control<number>();
+  const promise = deferred<number>();
 
   await assertThrowsAsync(() => {
     return Async.timeout(
-      controller.promise,
+      promise,
       1,
       () => new Error("Test timeout`"),
     );
   });
 
-  controller.resolve(1);
-  await controller.promise;
+  promise.resolve(1);
+  await promise;
 });
 
 Deno.test("Async.timeout should not time out", async () => {
-  const controller = Async.control<number>();
+  const promise = deferred<number>();
 
-  const promise = Async.timeout(
-    controller.promise,
+  const promiseWithTimeout = Async.timeout(
+    promise,
     1000,
     () => new Error("Test timeout`"),
   );
 
-  controller.resolve(123);
+  promise.resolve(123);
 
-  assertEquals(await promise, 123);
+  assertEquals(await promiseWithTimeout, 123);
 });
 
 Deno.test("Async.memoize", async () => {
