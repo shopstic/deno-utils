@@ -52,13 +52,13 @@ export const K8sResourceSchema = RelaxedObject({
   }),
 });
 
-export const CrdKind = "CustomResourceDefinition";
-export const CrdApiVersionV1beta1 = "apiextensions.k8s.io/v1beta1";
-export const CrdApiVersionV1 = "apiextensions.k8s.io/v1";
+export const K8sCrdKind = "CustomResourceDefinition";
+export const K8sCrdApiVersionV1beta1 = "apiextensions.k8s.io/v1beta1";
+export const K8sCrdApiVersionV1 = "apiextensions.k8s.io/v1";
 
 export const K8sCrdV1beta1Schema = RelaxedObject({
-  apiVersion: Type.Literal(CrdApiVersionV1beta1),
-  kind: Type.Literal(CrdKind),
+  apiVersion: Type.Literal(K8sCrdApiVersionV1beta1),
+  kind: Type.Literal(K8sCrdKind),
   metadata: RelaxedObject({
     name: Type.String(),
   }),
@@ -79,8 +79,8 @@ export const K8sCrdV1beta1Schema = RelaxedObject({
 });
 
 export const K8sCrdV1Schema = RelaxedObject({
-  apiVersion: Type.Literal(CrdApiVersionV1),
-  kind: Type.Literal(CrdKind),
+  apiVersion: Type.Literal(K8sCrdApiVersionV1),
+  kind: Type.Literal(K8sCrdKind),
   metadata: RelaxedObject({
     name: Type.String(),
   }),
@@ -103,7 +103,7 @@ export const K8sCrdSchema = Type.Union([K8sCrdV1beta1Schema, K8sCrdV1Schema]);
 export type K8sResource = Static<typeof K8sResourceSchema>;
 export type K8sResourceMetadata = Pick<K8sResource, "metadata">;
 
-export function createNamespace(
+export function createK8sNamespace(
   ns: IoK8sApiCoreV1Namespace & K8sResourceMetadata,
 ): IoK8sApiCoreV1Namespace & K8sResource {
   return {
@@ -113,7 +113,7 @@ export function createNamespace(
   };
 }
 
-export function createSecret(
+export function createK8sSecret(
   secret: IoK8sApiCoreV1Secret & K8sResourceMetadata,
 ): IoK8sApiCoreV1Secret & K8sResource {
   return {
@@ -123,7 +123,7 @@ export function createSecret(
   };
 }
 
-export function createConfigMap(
+export function createK8sConfigMap(
   configMap: IoK8sApiCoreV1ConfigMap & K8sResourceMetadata,
 ): IoK8sApiCoreV1ConfigMap & K8sResource {
   return {
@@ -133,25 +133,25 @@ export function createConfigMap(
   };
 }
 
-export function createVolume(
+export function createK8sVolume(
   volume: IoK8sApiCoreV1Volume,
 ): typeof volume {
   return volume;
 }
 
-export function createVolumeMount(
+export function createK8sVolumeMount(
   mount: IoK8sApiCoreV1VolumeMount,
 ): IoK8sApiCoreV1VolumeMount {
   return mount;
 }
 
-export function createContainerPort(
+export function createK8sContainerPort(
   port: IoK8sApiCoreV1ContainerPort,
 ): IoK8sApiCoreV1ContainerPort {
   return port;
 }
 
-export function createDaemonSet(
+export function createK8sDaemonSet(
   daemonSet: IoK8sApiAppsV1DaemonSet & K8sResourceMetadata,
 ): IoK8sApiAppsV1DaemonSet & K8sResource {
   return {
@@ -161,7 +161,7 @@ export function createDaemonSet(
   };
 }
 
-export function createDeployment(
+export function createK8sDeployment(
   deployment: IoK8sApiAppsV1Deployment & K8sResourceMetadata,
 ): IoK8sApiAppsV1Deployment & K8sResource {
   return {
@@ -171,7 +171,7 @@ export function createDeployment(
   };
 }
 
-export function createStatefulSet(
+export function createK8sStatefulSet(
   statefulSet: IoK8sApiAppsV1StatefulSet & K8sResourceMetadata,
 ): IoK8sApiAppsV1StatefulSet & K8sResource {
   return {
@@ -181,7 +181,7 @@ export function createStatefulSet(
   };
 }
 
-export function createJob(
+export function createK8sJob(
   job: IoK8sApiBatchV1Job & K8sResourceMetadata,
 ): IoK8sApiBatchV1Job & K8sResource {
   return {
@@ -191,7 +191,7 @@ export function createJob(
   };
 }
 
-export function createService(
+export function createK8sService(
   service:
     & IoK8sApiCoreV1Service
     & K8sResourceMetadata,
@@ -203,7 +203,7 @@ export function createService(
   };
 }
 
-export function createStorageClass(
+export function createK8sStorageClass(
   storageClass:
     & IoK8sApiStorageV1StorageClass
     & K8sResourceMetadata
@@ -216,7 +216,7 @@ export function createStorageClass(
   };
 }
 
-export function createIngress(
+export function createK8sIngress(
   ingress: IoK8sApiExtensionsV1beta1Ingress & K8sResourceMetadata,
 ): IoK8sApiExtensionsV1beta1Ingress & K8sResource {
   return {
@@ -226,7 +226,7 @@ export function createIngress(
   };
 }
 
-export function createSimpleIngress(
+export function createK8sSimpleIngress(
   {
     name,
     hostname,
@@ -245,7 +245,7 @@ export function createSimpleIngress(
     sslRedirect?: boolean;
   },
 ): IoK8sApiExtensionsV1beta1Ingress & K8sResource {
-  return createIngress({
+  return createK8sIngress({
     metadata: {
       name: name,
       annotations: {
@@ -283,7 +283,7 @@ export function createSimpleIngress(
   });
 }
 
-export function createPv(
+export function createK8sPv(
   pv: IoK8sApiCoreV1PersistentVolume & K8sResourceMetadata,
 ): IoK8sApiCoreV1PersistentVolume & K8sResource {
   return {
@@ -293,7 +293,7 @@ export function createPv(
   };
 }
 
-export function createPvc(
+export function createK8sPvc(
   pvc: IoK8sApiCoreV1PersistentVolumeClaim & K8sResourceMetadata,
 ): IoK8sApiCoreV1PersistentVolumeClaim & K8sResource {
   return {
@@ -308,7 +308,7 @@ export interface CephPvContext {
   csiRbdStorageClass: string;
 }
 
-export function createCephStaticPv(
+export function createK8sCephStaticPv(
   {
     name,
     size,
@@ -364,7 +364,7 @@ export function createCephStaticPv(
   };
 }
 
-export function createCephStaticPvc(
+export function createK8sCephStaticPvc(
   {
     name,
     storageRequestSize,
@@ -400,7 +400,7 @@ export function createCephStaticPvc(
   };
 }
 
-export function createRole(
+export function createK8sRole(
   role: IoK8sApiRbacV1Role & K8sResourceMetadata,
 ): IoK8sApiRbacV1Role & K8sResource {
   return {
@@ -410,7 +410,7 @@ export function createRole(
   };
 }
 
-export function createRoleBinding(
+export function createK8sRoleBinding(
   roleBinding: IoK8sApiRbacV1RoleBinding & K8sResourceMetadata,
 ): IoK8sApiRbacV1RoleBinding & K8sResource {
   return {
@@ -420,7 +420,7 @@ export function createRoleBinding(
   };
 }
 
-export function createClusterRole(
+export function createK8sClusterRole(
   clusterRole: IoK8sApiRbacV1ClusterRole & K8sResourceMetadata,
 ): IoK8sApiRbacV1ClusterRole & K8sResource {
   return {
@@ -430,7 +430,7 @@ export function createClusterRole(
   };
 }
 
-export function createClusterRoleBinding(
+export function createK8sClusterRoleBinding(
   clusterRoleBinding: IoK8sApiRbacV1ClusterRoleBinding & K8sResourceMetadata,
 ): IoK8sApiRbacV1ClusterRoleBinding & K8sResource {
   return {
@@ -440,7 +440,7 @@ export function createClusterRoleBinding(
   };
 }
 
-export function createServiceAccount(
+export function createK8sServiceAccount(
   account: IoK8sApiCoreV1ServiceAccount & K8sResourceMetadata,
 ): IoK8sApiCoreV1ServiceAccount & K8sResource {
   return {
@@ -450,16 +450,20 @@ export function createServiceAccount(
   };
 }
 
-export function createContainer(
+export function createK8sContainer(
   container: IoK8sApiCoreV1Container,
 ): IoK8sApiCoreV1Container {
   return container;
 }
 
-export function createEnvVar(env: IoK8sApiCoreV1EnvVar): IoK8sApiCoreV1EnvVar {
+export function createK8sEnvVar(
+  env: IoK8sApiCoreV1EnvVar,
+): IoK8sApiCoreV1EnvVar {
   return env;
 }
 
-export function createProbe(probe: IoK8sApiCoreV1Probe): IoK8sApiCoreV1Probe {
+export function createK8sProbe(
+  probe: IoK8sApiCoreV1Probe,
+): IoK8sApiCoreV1Probe {
   return probe;
 }

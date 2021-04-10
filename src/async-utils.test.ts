@@ -3,16 +3,16 @@ import {
   assertEquals,
   assertThrowsAsync,
 } from "https://deno.land/std@0.92.0/testing/asserts.ts";
-import * as Async from "./async-utils.ts";
+import { memoizePromise, timeoutPromise } from "./async-utils.ts";
 
-Deno.test("Async.timeout should time out", async () => {
+Deno.test("timeoutPromise should time out", async () => {
   const promise = deferred<number>();
 
   await assertThrowsAsync(() => {
-    return Async.timeout(
+    return timeoutPromise(
       promise,
       1,
-      () => new Error("Test timeout`"),
+      () => new Error("Test timeoutPromise`"),
     );
   });
 
@@ -20,13 +20,13 @@ Deno.test("Async.timeout should time out", async () => {
   await promise;
 });
 
-Deno.test("Async.timeout should not time out", async () => {
+Deno.test("timeoutPromise should not time out", async () => {
   const promise = deferred<number>();
 
-  const promiseWithTimeout = Async.timeout(
+  const promiseWithTimeout = timeoutPromise(
     promise,
     1000,
-    () => new Error("Test timeout`"),
+    () => new Error("Test timeoutPromise`"),
   );
 
   promise.resolve(123);
@@ -34,14 +34,14 @@ Deno.test("Async.timeout should not time out", async () => {
   assertEquals(await promiseWithTimeout, 123);
 });
 
-Deno.test("Async.memoize", async () => {
+Deno.test("memoizePromise", async () => {
   let callCount = 0;
   const factory = () => {
     callCount++;
     return Promise.resolve(123);
   };
 
-  const memoized = Async.memoize(factory);
+  const memoized = memoizePromise(factory);
 
   assertEquals(await memoized(), 123);
   assertEquals(await memoized(), 123);

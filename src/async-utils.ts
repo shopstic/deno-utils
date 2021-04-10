@@ -3,7 +3,7 @@ import { delay } from "https://deno.land/std@0.92.0/async/delay.ts";
 
 export { deferred, delay };
 
-export async function timeout<T>(
+export async function timeoutPromise<T>(
   promise: Promise<T>,
   timeoutMs: number,
   rejection: () => unknown = () => `Promise timed out after ${timeoutMs}ms`,
@@ -25,7 +25,7 @@ export async function timeout<T>(
   }
 }
 
-export function memoize<T>(create: () => Promise<T>): typeof create {
+export function memoizePromise<T>(create: () => Promise<T>): typeof create {
   let memoized: Promise<T> | null = null;
 
   return () => {
