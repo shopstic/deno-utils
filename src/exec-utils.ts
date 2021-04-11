@@ -14,6 +14,17 @@ function stripAnsi(s: string): string {
   }).join("");
 }
 
+export class NonZeroExitError extends Error {
+  constructor(
+    message: string,
+    public exitCode: number,
+    public output?: string,
+  ) {
+    super(message);
+    this.name = "NonZeroExitError";
+  }
+}
+
 async function _inheritExec(
   {
     run,
@@ -109,7 +120,10 @@ export async function inheritExec(
   const code = await _inheritExec(args);
 
   if (code !== 0) {
-    throw new Error(`Command return non-zero status of: ${code}`);
+    throw new NonZeroExitError(
+      `Command return non-zero status of: ${code}`,
+      code,
+    );
   }
 }
 
@@ -158,14 +172,17 @@ export async function captureExec(
     await Promise.all([stdinPromise, stderrPromise]);
 
     const { code } = await child.status();
-    const captured = await stdoutPromise;
+    const captured = new TextDecoder().decode(await stdoutPromise);
 
     if (code !== 0) {
-      throw new Error(
+      throw new NonZeroExitError(
         `Command return non-zero status of: ${code}. Captured stdout: ${captured}`,
+        code,
+        captured,
       );
     }
-    return new TextDecoder().decode(captured);
+
+    return captured;
   } finally {
     child.stderr!.close();
     child.close();
