@@ -1,12 +1,6 @@
-import {
-  Static,
-  TSchema,
-} from "https://raw.githubusercontent.com/shopstic/typebox/0.16.3/src/typebox.ts";
-import Ajv, {
-  ErrorObject,
-  Options,
-} from "https://cdn.skypack.dev/ajv@8.0.5?dts";
-import addFormats from "https://cdn.skypack.dev/ajv-formats@2.0.2?dts";
+import { Static, TSchema } from "./deps/typebox.ts";
+import type { ErrorObject, Options } from "./deps/ajv.ts";
+import { addFormats, Ajv } from "./deps/ajv.ts";
 
 export interface ValidationFailure {
   isSuccess: false;
