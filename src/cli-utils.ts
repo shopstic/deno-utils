@@ -1,5 +1,5 @@
 import { parseCliArgs } from "./deps/std-flags.ts";
-import { Static, TObject, TProperties } from "./deps/typebox.ts";
+import { Static, TObject, TProperties, TSchema } from "./deps/typebox.ts";
 import { validate } from "./validation-utils.ts";
 
 interface CliAction<T extends TProperties> {
@@ -42,6 +42,36 @@ async function waitForExitSignal(): Promise<ExitCode> {
   return new ExitCode(123);
 }
 
+function jsonSchemaToTypeName(schema: TSchema): string {
+  if (schema.const !== undefined) {
+    return JSON.stringify(schema.const);
+  }
+
+  if (schema.anyOf !== undefined) {
+    // deno-lint-ignore no-explicit-any
+    return schema.anyOf.map((t: any) => jsonSchemaToTypeName(t)).join(" | ");
+  }
+
+  if (schema.enum !== undefined) {
+    // deno-lint-ignore no-explicit-any
+    return schema.enum.map((v: any) => JSON.stringify(v)).join(" | ");
+  }
+
+  if (schema.type !== undefined) {
+    if (schema.type === "array") {
+      if (Array.isArray(schema.items)) { // tuple
+        return `[${schema.items.map(jsonSchemaToTypeName).join(", ")}]`;
+      }
+
+      return `${jsonSchemaToTypeName(schema.items)}...`;
+    }
+
+    return schema.type;
+  }
+
+  return "unknown";
+}
+
 export class CliProgram {
   // deno-lint-ignore no-explicit-any
   private actions = new Map<string, CliAction<any>>();
@@ -64,17 +94,74 @@ export class CliProgram {
     return this;
   }
 
-  async run(rawArgs: string[]) {
+  printProgramError(error: string): void {
     const supportedCommands = Array.from(this.actions.keys());
+
+    console.error(
+      `[Error] ${error}
+
+SUPPORTED COMMANDS:
+${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
+    );
+  }
+
+  printActionError<P extends TProperties>(
+    error: string,
+    action: CliAction<P>,
+  ): void {
+    const args = action.args;
+    const requiredArgSet = new Set(args.required);
+    const props = Object.entries(args.properties);
+
+    const renderProps = props.map(([name, prop]) => {
+      const nameWithDefault = (prop.default !== undefined)
+        ? `--${name}=${JSON.stringify(prop.default)}`
+        : (
+          requiredArgSet.has(name) ? `--${name}` : `[--${name}]`
+        );
+
+      return {
+        name: nameWithDefault,
+        typeName: `(${jsonSchemaToTypeName(prop)})`,
+        description: prop.description || prop.title || "",
+      };
+    });
+
+    const maxNameLength = renderProps.reduce(
+      (max, { name }) => Math.max(max, name.length),
+      0,
+    );
+
+    const maxTypeNameLength = renderProps.reduce(
+      (max, { typeName }) => Math.max(max, typeName.length),
+      0,
+    );
+
+    const actionHelp = renderProps
+      .map(({ name, typeName, description }) => {
+        return `    ${name.padEnd(maxNameLength)} ${
+          typeName.padEnd(maxTypeNameLength)
+        } ${description}`;
+      })
+      .join("\n");
+
+    console.error(
+      `[Error] ${error}
+
+ARGUMENTS
+${actionHelp}`,
+    );
+  }
+
+  async run(rawArgs: string[]) {
     const { _, ...args } = parseCliArgs(rawArgs);
 
     if (_.length !== 1) {
       if (_.length === 0) {
-        console.error("No command provided");
+        this.printProgramError("No command provided");
       } else {
-        console.error(`Invalid commands:`, _);
+        this.printProgramError(`Invalid commands: ${_.join(" ")}`);
       }
-      console.error(`Supported commands are: ${supportedCommands.join(", ")}`);
       return Deno.exit(1);
     }
 
@@ -82,16 +169,14 @@ export class CliProgram {
     const action = this.actions.get(String(command));
 
     if (!action) {
-      console.error(
-        `Unknown command: "${command}"`,
-      );
-      console.error(`Supported commands are: ${supportedCommands.join(", ")}`);
+      this.printProgramError(`Unknown command: ${command}`);
       return Deno.exit(1);
     }
 
     const validationResult = validate(action.args, args, {
       coerceTypes: true,
       strict: "log",
+      allErrors: true,
     });
 
     if (validationResult.isSuccess) {
@@ -102,8 +187,18 @@ export class CliProgram {
 
       this.onExit(exitCode);
     } else {
-      console.error("Invalid command arguments");
-      console.error(validationResult.errors);
+      this.printActionError(
+        `Invalid arguments for command: ${command}\n${
+          validationResult
+            .errorsToString({
+              separator: "\n",
+              dataVar: "    -",
+            })
+            .replaceAll("property", "argument")
+            .replaceAll("    -/", "    - /")
+        }`,
+        action,
+      );
       this.onExit(ExitCode.One);
     }
   }

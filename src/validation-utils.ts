@@ -1,10 +1,11 @@
 import { Static, TSchema } from "./deps/typebox.ts";
-import type { ErrorObject, Options } from "./deps/ajv.ts";
+import type { ErrorObject, ErrorsTextOptions, Options } from "./deps/ajv.ts";
 import { addFormats, Ajv } from "./deps/ajv.ts";
 
 export interface ValidationFailure {
   isSuccess: false;
   errors: ErrorObject[];
+  errorsToString: (options?: ErrorsTextOptions) => string;
 }
 
 export interface ValidationSuccess<V> {
@@ -43,6 +44,8 @@ export function createValidator<T extends TSchema>(
       return {
         isSuccess: false,
         errors: validate.errors!,
+        errorsToString: (options?: ErrorsTextOptions) =>
+          ajv.errorsText(validate.errors!, options),
       };
     }
 
@@ -78,6 +81,8 @@ export function createDefinitionValidator<T>(
       return {
         isSuccess: false,
         errors: validate.errors!,
+        errorsToString: (options?: ErrorsTextOptions) =>
+          ajv.errorsText(validate.errors!, options),
       };
     }
 

@@ -1,4 +1,4 @@
-import { readLines } from "./deps/std-io.ts";
+import { readLines, writeAll } from "./deps/std-io.ts";
 
 const ansiPattern = [
   "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
@@ -54,7 +54,7 @@ async function _inheritExec(
   try {
     const stdinPromise = (() => {
       if (typeof stdin === "string") {
-        return Deno.writeAll(child.stdin!, new TextEncoder().encode(stdin))
+        return writeAll(child.stdin!, new TextEncoder().encode(stdin))
           .finally(() => child.stdin!.close());
       } else if (typeof stdin === "object") {
         return Deno.copy(stdin as Deno.Reader, child.stdin!)
@@ -146,7 +146,7 @@ export async function captureExec(
   try {
     const stdinPromise = (() => {
       if (typeof stdin === "string") {
-        return Deno.writeAll(child.stdin!, new TextEncoder().encode(stdin))
+        return writeAll(child.stdin!, new TextEncoder().encode(stdin))
           .finally(() => child.stdin!.close());
       } else if (typeof stdin === "object") {
         return Deno.copy(stdin as Deno.Reader, child.stdin!)
