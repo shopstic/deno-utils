@@ -12,9 +12,11 @@ const foo = createCliAction(
     uri: Type.String({
       format: "uri",
       description: "Must be a valid URI",
+      examples: ["http://foo.bar/baz"],
     }),
     source: Type.Union([Type.Array(Type.String()), Type.String()], {
       description: "Can be repeated multiple times",
+      examples: ["/path/to/source"],
     }),
     destination: Type.Optional(Type.String({
       description: "This one has a default value",
@@ -26,9 +28,11 @@ const foo = createCliAction(
       Type.Literal(3),
     ], {
       description: "Union of literals",
+      examples: ["one"],
     }),
     enum2: Type.Enum(FooBarEnum, {
       description: "Enum",
+      examples: [FooBarEnum.BAR],
     }),
   }),
   async (args) => {

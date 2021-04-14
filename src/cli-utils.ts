@@ -107,6 +107,7 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
 
   printActionError<P extends TProperties>(
     error: string,
+    command: string,
     action: CliAction<P>,
   ): void {
     const args = action.args;
@@ -114,21 +115,30 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     const props = Object.entries(args.properties);
 
     const renderProps = props.map(([name, prop]) => {
-      const nameWithDefault = (prop.default !== undefined)
-        ? `--${name}=${JSON.stringify(prop.default)}`
+      const required = requiredArgSet.has(name);
+      const defaultValue = JSON.stringify(prop.default);
+      const argument = (prop.default !== undefined)
+        ? `--${name}=${defaultValue}`
         : (
-          requiredArgSet.has(name) ? `--${name}` : `[--${name}]`
+          required ? `--${name}` : `[--${name}]`
         );
 
       return {
-        name: nameWithDefault,
+        name,
+        argument,
+        required,
         typeName: `(${jsonSchemaToTypeName(prop)})`,
-        description: prop.description || prop.title || "",
+        description: prop.description ?? prop.title ?? "",
+        examples: (prop.examples && prop.examples[0]) ?? defaultValue ?? "...",
       };
     });
 
-    const maxNameLength = renderProps.reduce(
-      (max, { name }) => Math.max(max, name.length),
+    const usageArgs = renderProps.map(({ name, required, examples }) =>
+      `${required ? "" : "["}--${name}=${examples}${required ? "" : "]"}`
+    );
+
+    const maxArgumentLength = renderProps.reduce(
+      (max, { argument }) => Math.max(max, argument.length),
       0,
     );
 
@@ -138,8 +148,8 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     );
 
     const actionHelp = renderProps
-      .map(({ name, typeName, description }) => {
-        return `    ${name.padEnd(maxNameLength)} ${
+      .map(({ argument, typeName, description }) => {
+        return `    ${argument.padEnd(maxArgumentLength)} ${
           typeName.padEnd(maxTypeNameLength)
         } ${description}`;
       })
@@ -148,7 +158,12 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     console.error(
       `[Error] ${error}
 
-ARGUMENTS
+USAGE EXAMPLE:
+
+    ${command} ${usageArgs.join(" ")}
+
+ARGUMENTS:
+
 ${actionHelp}`,
     );
   }
@@ -165,8 +180,8 @@ ${actionHelp}`,
       return Deno.exit(1);
     }
 
-    const command = _[0];
-    const action = this.actions.get(String(command));
+    const command = String(_[0]);
+    const action = this.actions.get(command);
 
     if (!action) {
       this.printProgramError(`Unknown command: ${command}`);
@@ -197,6 +212,7 @@ ${actionHelp}`,
             .replaceAll("property", "argument")
             .replaceAll("    -/", "    - /")
         }`,
+        command,
         action,
       );
       this.onExit(ExitCode.One);
