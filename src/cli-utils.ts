@@ -129,7 +129,8 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
         required,
         typeName: `(${jsonSchemaToTypeName(prop)})`,
         description: prop.description ?? prop.title ?? "",
-        examples: (prop.examples && prop.examples[0]) ?? defaultValue ?? "...",
+        examples: (prop.examples && JSON.stringify(prop.examples[0])) ??
+          defaultValue ?? "...",
       };
     });
 
