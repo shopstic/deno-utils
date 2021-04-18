@@ -1,5 +1,5 @@
-import { assertEquals } from "./deps/std-testing.ts";
-import { createK8sNamespace } from "./k8s-utils.ts";
+import { assertEquals } from "./deps/std_testing.ts";
+import { createK8sNamespace } from "./k8s_utils.ts";
 
 Deno.test("K8s createK8sNamespace", () => {
   const ns = createK8sNamespace({

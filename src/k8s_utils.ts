@@ -17,14 +17,14 @@ import type {
   IoK8sApiRbacV1Role,
   IoK8sApiRbacV1RoleBinding,
   IoK8sApiStorageV1StorageClass,
-} from "./deps/k8s-api.ts";
+} from "./deps/k8s_api.ts";
 import {
   IoK8sApiCoreV1ContainerPort,
   IoK8sApiCoreV1EnvVar,
   IoK8sApiCoreV1Probe,
   IoK8sApiCoreV1Volume,
   IoK8sApiCoreV1VolumeMount,
-} from "./deps/k8s-api.ts";
+} from "./deps/k8s_api.ts";
 
 import type { Static, TObject, TProperties } from "./deps/typebox.ts";
 import { Type } from "./deps/typebox.ts";

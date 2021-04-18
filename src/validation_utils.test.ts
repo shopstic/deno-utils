@@ -1,6 +1,6 @@
-import { assert, assertEquals, assertThrows } from "./deps/std-testing.ts";
+import { assert, assertEquals, assertThrows } from "./deps/std_testing.ts";
 import { Type } from "./deps/typebox.ts";
-import { validate, validateDefinition } from "./validation-utils.ts";
+import { validate, validateDefinition } from "./validation_utils.ts";
 
 const schema = Type.Object({
   foo: Type.String(),

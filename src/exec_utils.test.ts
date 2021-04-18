@@ -1,5 +1,5 @@
-import { assertEquals, assertThrowsAsync } from "./deps/std-testing.ts";
-import { captureExec, inheritExec } from "./exec-utils.ts";
+import { assertEquals, assertThrowsAsync } from "./deps/std_testing.ts";
+import { captureExec, inheritExec } from "./exec_utils.ts";
 
 Deno.test("captureExec", async () => {
   const result = await captureExec({

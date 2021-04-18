@@ -1,4 +1,4 @@
-import { deferred, delay } from "./deps/std-async.ts";
+import { deferred, delay } from "./deps/std_async.ts";
 
 export { deferred, delay };
 

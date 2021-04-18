@@ -1,5 +1,5 @@
-import { CliProgram, createCliAction, ExitCode } from "./cli-utils.ts";
-import { assertEquals } from "./deps/std-testing.ts";
+import { CliProgram, createCliAction, ExitCode } from "./cli_utils.ts";
+import { assertEquals } from "./deps/std_testing.ts";
 import { Type } from "./deps/typebox.ts";
 
 Deno.test({

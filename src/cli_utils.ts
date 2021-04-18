@@ -1,6 +1,6 @@
-import { parseCliArgs } from "./deps/std-flags.ts";
+import { parseCliArgs } from "./deps/std_flags.ts";
 import { Static, TObject, TProperties, TSchema } from "./deps/typebox.ts";
-import { validate } from "./validation-utils.ts";
+import { validate } from "./validation_utils.ts";
 
 interface CliAction<T extends TProperties> {
   args: TObject<T>;

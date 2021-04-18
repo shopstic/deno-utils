@@ -1,6 +1,6 @@
-import { CliProgram, createCliAction, ExitCode } from "../cli-utils.ts";
+import { CliProgram, createCliAction, ExitCode } from "../cli_utils.ts";
 import { Type } from "../deps/typebox.ts";
-import { delay } from "../async-utils.ts";
+import { delay } from "../async_utils.ts";
 
 enum FooBarEnum {
   FOO = "FOO",

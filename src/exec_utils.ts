@@ -1,4 +1,4 @@
-import { readLines, writeAll } from "./deps/std-io.ts";
+import { readLines, writeAll } from "./deps/std_io.ts";
 
 const ansiPattern = [
   "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
