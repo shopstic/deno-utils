@@ -5,25 +5,23 @@ import type {
   IoK8sApiBatchV1Job,
   IoK8sApiCoreV1ConfigMap,
   IoK8sApiCoreV1Container,
+  IoK8sApiCoreV1ContainerPort,
+  IoK8sApiCoreV1EnvVar,
   IoK8sApiCoreV1Namespace,
   IoK8sApiCoreV1PersistentVolume,
   IoK8sApiCoreV1PersistentVolumeClaim,
+  IoK8sApiCoreV1Probe,
   IoK8sApiCoreV1Secret,
   IoK8sApiCoreV1Service,
   IoK8sApiCoreV1ServiceAccount,
+  IoK8sApiCoreV1Volume,
+  IoK8sApiCoreV1VolumeMount,
   IoK8sApiExtensionsV1beta1Ingress,
   IoK8sApiRbacV1ClusterRole,
   IoK8sApiRbacV1ClusterRoleBinding,
   IoK8sApiRbacV1Role,
   IoK8sApiRbacV1RoleBinding,
   IoK8sApiStorageV1StorageClass,
-} from "./deps/k8s_api.ts";
-import {
-  IoK8sApiCoreV1ContainerPort,
-  IoK8sApiCoreV1EnvVar,
-  IoK8sApiCoreV1Probe,
-  IoK8sApiCoreV1Volume,
-  IoK8sApiCoreV1VolumeMount,
 } from "./deps/k8s_api.ts";
 
 import type { Static, TObject, TProperties } from "./deps/typebox.ts";
@@ -36,26 +34,23 @@ export type {
   IoK8sApiBatchV1Job,
   IoK8sApiCoreV1ConfigMap,
   IoK8sApiCoreV1Container,
+  IoK8sApiCoreV1ContainerPort,
+  IoK8sApiCoreV1EnvVar,
   IoK8sApiCoreV1Namespace,
   IoK8sApiCoreV1PersistentVolume,
   IoK8sApiCoreV1PersistentVolumeClaim,
+  IoK8sApiCoreV1Probe,
   IoK8sApiCoreV1Secret,
   IoK8sApiCoreV1Service,
   IoK8sApiCoreV1ServiceAccount,
+  IoK8sApiCoreV1Volume,
+  IoK8sApiCoreV1VolumeMount,
   IoK8sApiExtensionsV1beta1Ingress,
   IoK8sApiRbacV1ClusterRole,
   IoK8sApiRbacV1ClusterRoleBinding,
   IoK8sApiRbacV1Role,
   IoK8sApiRbacV1RoleBinding,
   IoK8sApiStorageV1StorageClass,
-};
-
-export {
-  IoK8sApiCoreV1ContainerPort,
-  IoK8sApiCoreV1EnvVar,
-  IoK8sApiCoreV1Probe,
-  IoK8sApiCoreV1Volume,
-  IoK8sApiCoreV1VolumeMount,
 };
 
 export function RelaxedObject<T extends TProperties>(

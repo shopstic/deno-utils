@@ -16,8 +16,8 @@ export type { IoK8sApiCoreV1ServiceAccount } from "https://raw.githubusercontent
 export type { IoK8sApiCoreV1Service } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Service.ts";
 export type { IoK8sApiCoreV1Namespace } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Namespace.ts";
 export type { IoK8sApiCoreV1Container } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Container.ts";
-export { IoK8sApiCoreV1Volume } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Volume.ts";
-export { IoK8sApiCoreV1VolumeMount } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1VolumeMount.ts";
-export { IoK8sApiCoreV1ContainerPort } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1ContainerPort.ts";
-export { IoK8sApiCoreV1Probe } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Probe.ts";
-export { IoK8sApiCoreV1EnvVar } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1EnvVar.ts";
+export type { IoK8sApiCoreV1Volume } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Volume.ts";
+export type { IoK8sApiCoreV1VolumeMount } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1VolumeMount.ts";
+export type { IoK8sApiCoreV1ContainerPort } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1ContainerPort.ts";
+export type { IoK8sApiCoreV1Probe } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1Probe.ts";
+export type { IoK8sApiCoreV1EnvVar } from "https://raw.githubusercontent.com/shopstic/k8s-deno-client/1.19.2/models/IoK8sApiCoreV1EnvVar.ts";
