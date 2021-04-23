@@ -34,7 +34,7 @@ jobs:
 
       - name: Build and push shell Docker image
         id: buildkit
-        uses: shopstic/buildkit-action@1.0.5
+        uses: shopstic/buildkit-action@1.0.12
         with:
           context: ${{ github.workspace }}/images/shell
           image: ghcr.io/shopstic/deno-utils-ci
