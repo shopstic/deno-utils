@@ -303,11 +303,12 @@ export function createK8sIngress(
   };
 }
 
-export function createK8sSimpleIngress(
+export function createK8sNginxIngress(
   {
     name,
     hostname,
     servicePath,
+    servicePathType,
     serviceBackend,
     protocol = "HTTP",
     sslRedirect = true,
@@ -315,6 +316,7 @@ export function createK8sSimpleIngress(
     name: string;
     hostname: string;
     servicePath: string;
+    servicePathType: "Prefix" | "Exact";
     serviceBackend: IoK8sApiNetworkingV1IngressServiceBackend;
     protocol?: "HTTP" | "GRPC";
     sslRedirect?: boolean;
@@ -340,6 +342,7 @@ export function createK8sSimpleIngress(
             paths: [
               {
                 path: servicePath,
+                pathType: servicePathType,
                 backend: {
                   service: serviceBackend,
                 },
