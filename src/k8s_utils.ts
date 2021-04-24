@@ -16,7 +16,8 @@ import type {
   IoK8sApiCoreV1ServiceAccount,
   IoK8sApiCoreV1Volume,
   IoK8sApiCoreV1VolumeMount,
-  IoK8sApiExtensionsV1beta1Ingress,
+  IoK8sApiNetworkingV1Ingress,
+  IoK8sApiNetworkingV1IngressServiceBackend,
   IoK8sApiRbacV1ClusterRole,
   IoK8sApiRbacV1ClusterRoleBinding,
   IoK8sApiRbacV1Role,
@@ -45,7 +46,7 @@ export type {
   IoK8sApiCoreV1ServiceAccount,
   IoK8sApiCoreV1Volume,
   IoK8sApiCoreV1VolumeMount,
-  IoK8sApiExtensionsV1beta1Ingress,
+  IoK8sApiNetworkingV1Ingress,
   IoK8sApiRbacV1ClusterRole,
   IoK8sApiRbacV1ClusterRoleBinding,
   IoK8sApiRbacV1Role,
@@ -150,10 +151,38 @@ export const K8sCrdSchema = Type.Union([K8sCrdV1beta1Schema, K8sCrdV1Schema]);
 
 export type K8sResource = Static<typeof K8sResourceSchema>;
 export type K8sResourceMetadata = Pick<K8sResource, "metadata">;
+export type K8sNamespace = IoK8sApiCoreV1Namespace & K8sResource;
+export type K8sSecret = IoK8sApiCoreV1Secret & K8sResource;
+export type K8sConfigMap = IoK8sApiCoreV1ConfigMap & K8sResource;
+export type K8sVolumeMount = IoK8sApiCoreV1VolumeMount;
+export type K8sContainerPort = IoK8sApiCoreV1ContainerPort;
+export type K8sDaemonSet = IoK8sApiAppsV1DaemonSet & K8sResource;
+export type K8sDeployment = IoK8sApiAppsV1Deployment & K8sResource;
+export type K8sStatefulSet = IoK8sApiAppsV1StatefulSet & K8sResource;
+export type K8sJob = IoK8sApiBatchV1Job & K8sResource;
+export type K8sService = IoK8sApiCoreV1Service & K8sResource;
+export type K8sStorageClass = IoK8sApiStorageV1StorageClass & K8sResource;
+export type K8sIngress = IoK8sApiNetworkingV1Ingress & K8sResource;
+export type K8sPersistentVolume = IoK8sApiCoreV1PersistentVolume & K8sResource;
+export type K8sPv = K8sPersistentVolume;
+export type K8sPersistentVolumeClaim =
+  & IoK8sApiCoreV1PersistentVolumeClaim
+  & K8sResource;
+export type K8sPvc = K8sPersistentVolumeClaim;
+export type K8sRole = IoK8sApiRbacV1Role & K8sResource;
+export type K8sRoleBinding = IoK8sApiRbacV1RoleBinding & K8sResource;
+export type K8sClusterRole = IoK8sApiRbacV1ClusterRole & K8sResource;
+export type K8sClusterRoleBinding =
+  & IoK8sApiRbacV1ClusterRoleBinding
+  & K8sResource;
+export type K8sServiceAccount = IoK8sApiCoreV1ServiceAccount & K8sResource;
+export type K8sContainer = IoK8sApiCoreV1Container;
+export type K8sEnvVar = IoK8sApiCoreV1EnvVar;
+export type K8sProbe = IoK8sApiCoreV1Probe;
 
 export function createK8sNamespace(
   ns: IoK8sApiCoreV1Namespace & K8sResourceMetadata,
-): IoK8sApiCoreV1Namespace & K8sResource {
+): K8sNamespace {
   return {
     apiVersion: "v1",
     kind: K8sKind.Namespace,
@@ -163,7 +192,7 @@ export function createK8sNamespace(
 
 export function createK8sSecret(
   secret: IoK8sApiCoreV1Secret & K8sResourceMetadata,
-): IoK8sApiCoreV1Secret & K8sResource {
+): K8sSecret {
   return {
     apiVersion: "v1",
     kind: K8sKind.Secret,
@@ -173,7 +202,7 @@ export function createK8sSecret(
 
 export function createK8sConfigMap(
   configMap: IoK8sApiCoreV1ConfigMap & K8sResourceMetadata,
-): IoK8sApiCoreV1ConfigMap & K8sResource {
+): K8sConfigMap {
   return {
     apiVersion: "v1",
     kind: K8sKind.ConfigMap,
@@ -189,19 +218,19 @@ export function createK8sVolume(
 
 export function createK8sVolumeMount(
   mount: IoK8sApiCoreV1VolumeMount,
-): IoK8sApiCoreV1VolumeMount {
+): K8sVolumeMount {
   return mount;
 }
 
 export function createK8sContainerPort(
   port: IoK8sApiCoreV1ContainerPort,
-): IoK8sApiCoreV1ContainerPort {
+): K8sContainerPort {
   return port;
 }
 
 export function createK8sDaemonSet(
   daemonSet: IoK8sApiAppsV1DaemonSet & K8sResourceMetadata,
-): IoK8sApiAppsV1DaemonSet & K8sResource {
+): K8sDaemonSet {
   return {
     apiVersion: "apps/v1",
     kind: K8sKind.DaemonSet,
@@ -211,7 +240,7 @@ export function createK8sDaemonSet(
 
 export function createK8sDeployment(
   deployment: IoK8sApiAppsV1Deployment & K8sResourceMetadata,
-): IoK8sApiAppsV1Deployment & K8sResource {
+): K8sDeployment {
   return {
     apiVersion: "apps/v1",
     kind: K8sKind.Deployment,
@@ -221,7 +250,7 @@ export function createK8sDeployment(
 
 export function createK8sStatefulSet(
   statefulSet: IoK8sApiAppsV1StatefulSet & K8sResourceMetadata,
-): IoK8sApiAppsV1StatefulSet & K8sResource {
+): K8sStatefulSet {
   return {
     apiVersion: "apps/v1",
     kind: K8sKind.StatefulSet,
@@ -231,7 +260,7 @@ export function createK8sStatefulSet(
 
 export function createK8sJob(
   job: IoK8sApiBatchV1Job & K8sResourceMetadata,
-): IoK8sApiBatchV1Job & K8sResource {
+): K8sJob {
   return {
     apiVersion: "batch/v1",
     kind: K8sKind.Job,
@@ -243,7 +272,7 @@ export function createK8sService(
   service:
     & IoK8sApiCoreV1Service
     & K8sResourceMetadata,
-): IoK8sApiCoreV1Service & K8sResource {
+): K8sService {
   return {
     apiVersion: "v1",
     kind: K8sKind.Service,
@@ -256,7 +285,7 @@ export function createK8sStorageClass(
     & IoK8sApiStorageV1StorageClass
     & K8sResourceMetadata
     & Pick<IoK8sApiStorageV1StorageClass, "provisioner">,
-): IoK8sApiStorageV1StorageClass & K8sResource {
+): K8sStorageClass {
   return {
     apiVersion: "storage.k8s.io/v1",
     kind: K8sKind.StorageClass,
@@ -265,10 +294,10 @@ export function createK8sStorageClass(
 }
 
 export function createK8sIngress(
-  ingress: IoK8sApiExtensionsV1beta1Ingress & K8sResourceMetadata,
-): IoK8sApiExtensionsV1beta1Ingress & K8sResource {
+  ingress: IoK8sApiNetworkingV1Ingress & K8sResourceMetadata,
+): K8sIngress {
   return {
-    apiVersion: "extensions/v1beta1",
+    apiVersion: "networking.k8s.io/v1",
     kind: K8sKind.Ingress,
     ...ingress,
   };
@@ -279,20 +308,18 @@ export function createK8sSimpleIngress(
     name,
     hostname,
     servicePath,
-    serviceName,
-    servicePort,
+    serviceBackend,
     protocol = "HTTP",
     sslRedirect = true,
   }: {
     name: string;
     hostname: string;
     servicePath: string;
-    serviceName: string;
-    servicePort: number | string;
+    serviceBackend: IoK8sApiNetworkingV1IngressServiceBackend;
     protocol?: "HTTP" | "GRPC";
     sslRedirect?: boolean;
   },
-): IoK8sApiExtensionsV1beta1Ingress & K8sResource {
+): K8sIngress {
   return createK8sIngress({
     metadata: {
       name: name,
@@ -314,8 +341,7 @@ export function createK8sSimpleIngress(
               {
                 path: servicePath,
                 backend: {
-                  serviceName,
-                  servicePort,
+                  service: serviceBackend,
                 },
               },
             ],
@@ -333,7 +359,7 @@ export function createK8sSimpleIngress(
 
 export function createK8sPv(
   pv: IoK8sApiCoreV1PersistentVolume & K8sResourceMetadata,
-): IoK8sApiCoreV1PersistentVolume & K8sResource {
+): K8sPv {
   return {
     apiVersion: "v1",
     kind: K8sKind.PersistentVolume,
@@ -343,7 +369,7 @@ export function createK8sPv(
 
 export function createK8sPvc(
   pvc: IoK8sApiCoreV1PersistentVolumeClaim & K8sResourceMetadata,
-): IoK8sApiCoreV1PersistentVolumeClaim & K8sResource {
+): K8sPvc {
   return {
     apiVersion: "v1",
     kind: K8sKind.PersistentVolumeClaim,
@@ -379,7 +405,7 @@ export function createK8sCephStaticPv(
     pool?: string;
     volumeMode?: "Filesystem" | "Block";
   },
-): IoK8sApiCoreV1PersistentVolume & K8sResource {
+): K8sPv {
   return {
     apiVersion: "v1",
     kind: "PersistentVolume",
@@ -428,7 +454,7 @@ export function createK8sCephStaticPvc(
     accessModes?: K8sPersistentVolumeAccessMode[];
     volumeName?: string;
   },
-): IoK8sApiCoreV1PersistentVolumeClaim & K8sResource {
+): K8sPvc {
   return {
     apiVersion: "v1",
     kind: K8sKind.PersistentVolumeClaim,
@@ -450,7 +476,7 @@ export function createK8sCephStaticPvc(
 
 export function createK8sRole(
   role: IoK8sApiRbacV1Role & K8sResourceMetadata,
-): IoK8sApiRbacV1Role & K8sResource {
+): K8sRole {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
     kind: K8sKind.Role,
@@ -460,7 +486,7 @@ export function createK8sRole(
 
 export function createK8sRoleBinding(
   roleBinding: IoK8sApiRbacV1RoleBinding & K8sResourceMetadata,
-): IoK8sApiRbacV1RoleBinding & K8sResource {
+): K8sRoleBinding {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
     kind: K8sKind.RoleBinding,
@@ -480,7 +506,7 @@ export function createK8sClusterRole(
 
 export function createK8sClusterRoleBinding(
   clusterRoleBinding: IoK8sApiRbacV1ClusterRoleBinding & K8sResourceMetadata,
-): IoK8sApiRbacV1ClusterRoleBinding & K8sResource {
+): K8sClusterRoleBinding {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
     kind: K8sKind.ClusterRoleBinding,
@@ -490,7 +516,7 @@ export function createK8sClusterRoleBinding(
 
 export function createK8sServiceAccount(
   account: IoK8sApiCoreV1ServiceAccount & K8sResourceMetadata,
-): IoK8sApiCoreV1ServiceAccount & K8sResource {
+): K8sServiceAccount {
   return {
     apiVersion: "v1",
     kind: K8sKind.ServiceAccount,
@@ -500,18 +526,18 @@ export function createK8sServiceAccount(
 
 export function createK8sContainer(
   container: IoK8sApiCoreV1Container,
-): IoK8sApiCoreV1Container {
+): K8sContainer {
   return container;
 }
 
 export function createK8sEnvVar(
   env: IoK8sApiCoreV1EnvVar,
-): IoK8sApiCoreV1EnvVar {
+): K8sEnvVar {
   return env;
 }
 
 export function createK8sProbe(
   probe: IoK8sApiCoreV1Probe,
-): IoK8sApiCoreV1Probe {
+): K8sProbe {
   return probe;
 }
