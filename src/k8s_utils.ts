@@ -312,6 +312,7 @@ export function createK8sNginxIngress(
     serviceBackend,
     protocol = "HTTP",
     sslRedirect = true,
+    tlsSecretName,
   }: {
     name: string;
     hostname: string;
@@ -320,6 +321,7 @@ export function createK8sNginxIngress(
     serviceBackend: IoK8sApiNetworkingV1IngressServiceBackend;
     protocol?: "HTTP" | "GRPC";
     sslRedirect?: boolean;
+    tlsSecretName?: string;
   },
 ): K8sIngress {
   return createK8sIngress({
@@ -354,6 +356,11 @@ export function createK8sNginxIngress(
       tls: [
         {
           hosts: [hostname],
+          ...(tlsSecretName
+            ? {
+              secretName: tlsSecretName,
+            }
+            : {}),
         },
       ],
     },
