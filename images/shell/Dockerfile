@@ -1,4 +1,4 @@
-FROM shopstic/bin-deno:1.11.0 as bin-deno
+FROM shopstic/bin-deno:1.13.2 as bin-deno
 
 FROM ubuntu:20.04
 
