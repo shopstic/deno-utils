@@ -22,7 +22,7 @@
           buildInputs = devShell.buildInputs;
           installPhase = ''
             export DENO_DIR="$TMPDIR/.deno"
-            ./ci.sh
+            bash ./ci.sh
             mkdir -p $out
           '';
         };
