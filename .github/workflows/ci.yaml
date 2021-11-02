@@ -24,6 +24,5 @@ jobs:
         with:
           nix_version: 2.4pre20210908_3c56f62
           nix_conf: experimental-features = nix-command flakes
-      - run: nix build -L
-      - run: nix flake check
+      - run: nix develop -c ./ci.sh
       - run: nix copy .#devEnv --to 's3://nix/?scheme=https&endpoint=nyc3.digitaloceanspaces.com'

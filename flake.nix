@@ -16,16 +16,6 @@
         packages = {
           devEnv = devShell.inputDerivation;
         };
-        defaultPackage = pkgs.stdenv.mkDerivation {
-          name = "deno-utils";
-          src = ./.;
-          buildInputs = devShell.buildInputs;
-          installPhase = ''
-            export DENO_DIR="$TMPDIR/.deno"
-            bash ./ci.sh
-            mkdir -p $out
-          '';
-        };
       }
     );
 }
