@@ -33,10 +33,10 @@ async function waitForExitSignal(): Promise<ExitCode> {
   await Promise.race([
     // deno-lint-ignore ban-ts-comment
     // @ts-ignore
-    Deno.signal(Deno.Signal.SIGINT),
+    Deno.signal("SIGINT"),
     // deno-lint-ignore ban-ts-comment
     // @ts-ignore
-    Deno.signal(Deno.Signal.SIGTERM),
+    Deno.signal("SIGTERM"),
   ]);
 
   return new ExitCode(123);

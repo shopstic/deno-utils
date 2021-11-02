@@ -3,70 +3,31 @@ name: CI Workflow
 on:
   push:
     branches:
-      - '*'
+      - "*"
     tags-ignore:
-      - '*'
+      - "*"
   pull_request:
     branches:
-      - '*'
+      - "*"
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  build-env:
-    name: Build CI environment image
-    runs-on: ubuntu-20.04
-    outputs:
-      image: ${{ steps.buildkit.outputs.image }}:${{ steps.buildkit.outputs.tag }}    
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-
-      - run: chmod +r ~/.docker/config.json
-
-      - name: Build and push shell Docker image
-        id: buildkit
-        uses: shopstic/buildkit-action@1.0.12
-        with:
-          context: ${{ github.workspace }}/images/shell
-          image: ghcr.io/shopstic/deno-utils-ci
-          tag: ${{ hashFiles('images/shell/*') }}
-          skipIfExists: true
-
-  test:
-    name: Run tests
-    needs: build-env
+  build:
+    name: Build
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+      - uses: actions/checkout@v2.3.4
+      - uses: cachix/install-nix-action@v14
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-
-      - name: Run tests
-        if: github.ref == 'refs/heads/main'
-        env:
-          SHELL_IMAGE: ${{ needs.build-env.outputs.image }}
-        run: |-
-          cat <<EOF | docker run \
-            --workdir /repo \
-            -i \
-            --rm \
-            -v "${GITHUB_WORKSPACE}:/repo" \
-            "${SHELL_IMAGE}" \
-            bash -l
-          set -euo pipefail
-          ./ci.sh
-          EOF
+          install_url: https://nixos-nix-install-tests.cachix.org/serve/vij683ly7sl95nnhb67bdjjfabclr85m/install
+          install_options: "--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve"
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = s3://nix/?scheme=https&endpoint=nyc3.digitaloceanspaces.com https://cache.nixos.org/
+      - run: nix build
+      - run: nix flake check
+      - run: nix copy .#devEnv --to 's3://nix/?scheme=https&endpoint=nyc3.digitaloceanspaces.com'

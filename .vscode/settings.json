@@ -9,5 +9,8 @@
   },
   "files.watcherExclude": {
     "**/target": true
+  },
+  "deno.suggest.imports.hosts": {
+    "https://cdn.skypack.dev": false
   }
 }
