@@ -1,11 +1,6 @@
 {
   description = "Deno Utils";
 
-  nixConfig.substituters = [
-    "s3://nix/?profile=nix-cache&scheme=https&endpoint=nyc3.digitaloceanspaces.com"
-    "https://cache.nixos.org/"
-  ];
-
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:

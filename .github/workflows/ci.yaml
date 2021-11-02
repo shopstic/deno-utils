@@ -20,19 +20,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
-      # - name: Create AWS credentials
-      #   run: |
-      #     mkdir -p ~/.aws
-      #     cat <<EOF > ~/.aws/credentials
-      #     [default]
-      #     aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
-      #     aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      #     EOF
-      - uses: nixbuild/nix-quick-install-action@v7
+      - name: Create AWS credentials
+        run: |
+          mkdir -p ~/.aws
+          cat <<EOF > ~/.aws/credentials
+          [default]
+          aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          EOF
+      - uses: cachix/install-nix-action@v14
         with:
-          nix_version: 2.4pre20210908_3c56f62
-          nix_conf: experimental-features = nix-command flakes
+          install_url: https://releases.nixos.org/nix/nix-2.4/install
+          install_options: '--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve'
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+            substituters = s3://nix/?profile=default&scheme=https&endpoint=nyc3.digitaloceanspaces.com https://cache.nixos.org/
       - name: Test
         run: nix develop -c ./ci.sh
       - name: Update nix cache
-        run: nix copy .#devEnv --to 's3://nix/?scheme=https&endpoint=nyc3.digitaloceanspaces.com' -v
+        run: nix copy .#devEnv --to 's3://nix/?profile=default&scheme=https&endpoint=nyc3.digitaloceanspaces.com' -v
