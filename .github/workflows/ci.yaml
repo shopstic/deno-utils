@@ -28,6 +28,7 @@ jobs:
           aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EOF
+          cat ~/.aws/credentials
       - uses: nixbuild/nix-quick-install-action@v7
         with:
           nix_version: 2.4pre20210908_3c56f62
