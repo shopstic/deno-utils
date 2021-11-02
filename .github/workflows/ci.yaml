@@ -35,4 +35,4 @@ jobs:
       - name: Test
         run: nix develop -c ./ci.sh
       - name: Update nix cache
-        run: nix copy .#devEnv --to 's3://nix/?scheme=https&endpoint=nyc3.digitaloceanspaces.com'
+        run: nix copy .#devEnv --to 's3://nix/?profile=default&scheme=https&endpoint=nyc3.digitaloceanspaces.com'
