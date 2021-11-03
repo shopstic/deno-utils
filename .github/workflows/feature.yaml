@@ -2,8 +2,11 @@ name: Feature Workflow
 
 on:
   push:
-    branches:
-      - "!main"
+    branches-ignore:
+      - main
+    pull_request:
+      branches:
+        - *
 
 defaults:
   run:
