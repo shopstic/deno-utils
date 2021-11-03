@@ -6,5 +6,6 @@ in
 mkShell {
   buildInputs = [
     denoBin
+    awscli2
   ];
 }
