@@ -1,0 +1,25 @@
+name: Feature Workflow
+
+on:
+  push:
+    branches:
+      - "!main"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    environment: feature
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: nixbuild/nix-quick-install-action@v7
+        with:
+          nix_version: 2.4pre20210908_3c56f62
+          nix_conf: |
+            experimental-features = nix-command flakes
+      - name: Test
+        run: nix develop -c ./ci.sh
