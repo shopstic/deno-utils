@@ -46,6 +46,7 @@ jobs:
             experimental-features = nix-command flakes
             substituters = ${{ env.NIX_CACHE_S3 }} https://cache.nixos.org/
             trusted-users = root runner
+            trusted-public-keys = nix-cache:jxOpK2dQOv/7JIb5/30+W4oidtUgmFMXLc/3mC09mKM= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
 
       - name: Info
         run: |
