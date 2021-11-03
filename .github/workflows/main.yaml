@@ -37,11 +37,13 @@ jobs:
             substituters = ${{ env.NIX_CACHE_S3 }} https://cache.nixos.org/
             trusted-users = root runner
 
-      - name: Show derivation
-        run: nix show-derivation .#devEnv
+      - name: Info
+        run: |
+          nix show-derivation
+          nix path-info
 
       - name: Build
-        run: nix build .#devEnv -v
+        run: nix build -v
 
       - name: Test
         run: nix develop -c ./ci.sh
@@ -49,4 +51,4 @@ jobs:
       - name: Update nix cache
         if: github.ref == 'refs/heads/main'
         run: |
-          nix copy .#devEnv --to '${{ env.NIX_CACHE_S3 }}' -v
+          nix copy --to '${{ env.NIX_CACHE_S3 }}' -v

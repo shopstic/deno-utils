@@ -8,8 +8,12 @@
       let pkgs = nixpkgs.legacyPackages.${system}; in
       rec {
         devShell = import ./nix/shell.nix { inherit pkgs; };
-        packages = {
-          devEnv = devShell.inputDerivation;
+        defaultPackage = pkgs.stdenv.mkDerivation {
+          name = "deno-utils-dev";
+          version = "1.0.0";
+          src = ./.;
+          buildInputs = devShell.buildInputs;
+          installPhase = "mkdir -p $out";
         };
       }
     );
