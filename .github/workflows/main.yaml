@@ -35,7 +35,7 @@ jobs:
             trusted-users = root runner
 
       - name: Test
-        run: nix develop -c ./ci.sh
+        run: nix develop -c ./ci.sh -v
 
       - name: Update nix cache
         # if: github.ref == 'refs/heads/main'
