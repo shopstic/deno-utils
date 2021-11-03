@@ -6,6 +6,5 @@ in
 mkShell {
   buildInputs = [
     denoBin
-    bind
   ];
 }
