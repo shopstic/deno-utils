@@ -39,6 +39,7 @@ jobs:
 
       - name: Test
         run: |
+          nix show-derivation .#devEnv
           nix build .#devEnv -v
           nix develop -c ./ci.sh
 
