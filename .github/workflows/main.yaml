@@ -33,7 +33,7 @@ jobs:
           nix_conf: |
             experimental-features = nix-command flakes
             substituters = ${{ env.NIX_CACHE_S3 }} https://cache.nixos.org/
-            trusted-users = root ubuntu
+            trusted-users = root runner
       - name: Test
         run: nix develop -c ./ci.sh
       - name: Update nix cache
