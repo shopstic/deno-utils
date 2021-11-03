@@ -37,6 +37,6 @@ jobs:
       - name: Test
         run: nix develop -c ./ci.sh
       - name: Update nix cache
-        if: github.ref == "refs/heads/main"
+        if: ${{ github.ref == "refs/heads/main" }}
         run: |
           nix copy .#devEnv --to '${{ env.NIX_CACHE_S3 }}' -v
