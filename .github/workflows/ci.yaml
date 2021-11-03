@@ -18,6 +18,9 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    environment: ${{ github.ref == "refs/heads/main" && "main" || "feature" }}
+    env:
+      NIX_CACHE_S3: s3://nix/?profile=default&scheme=https&endpoint=nyc3.digitaloceanspaces.com
     steps:
       - uses: actions/checkout@v2.3.4
       - name: Create AWS credentials
@@ -28,13 +31,16 @@ jobs:
           aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EOF
+          whoami
       - uses: nixbuild/nix-quick-install-action@v7
         with:
           nix_version: 2.4pre20210908_3c56f62
           nix_conf: |
             experimental-features = nix-command flakes
-            substituters = s3://nix/?profile=default&scheme=https&endpoint=nyc3.digitaloceanspaces.com https://cache.nixos.org/
+            substituters = ${{ env.NIX_CACHE_S3 }} https://cache.nixos.org/
+            trusted-users = root ubuntu
       - name: Test
         run: nix develop -c ./ci.sh
       - name: Update nix cache
-        run: nix copy .#devEnv --to 's3://nix/?profile=default&scheme=https&endpoint=nyc3.digitaloceanspaces.com' -v
+        if: ${{ github.ref == "refs/heads/main" }}
+        run: nix copy .#devEnv --to '${{ env.NIX_CACHE_S3 }}' -v
