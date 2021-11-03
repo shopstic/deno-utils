@@ -1,9 +1,6 @@
 name: Main Workflow
 
-on:
-  push:
-    branches:
-      - '*'
+on: [push, pull_request]
 
 defaults:
   run:
