@@ -3,7 +3,7 @@ name: Main Workflow
 on:
   push:
     branches:
-      - main
+      - *
 
 defaults:
   run:
@@ -14,7 +14,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref == "refs/heads/main" && "main" || "feature" }}
+      name: ${{ github.ref }}
     env:
       NIX_CACHE_S3: s3://nixed/cache?profile=nix-cache&scheme=https
     steps:
@@ -37,5 +37,6 @@ jobs:
       - name: Test
         run: nix develop -c ./ci.sh
       - name: Update nix cache
+        if: github.ref == "refs/heads/main"
         run: |
           nix copy .#devEnv --to '${{ env.NIX_CACHE_S3 }}' -v
