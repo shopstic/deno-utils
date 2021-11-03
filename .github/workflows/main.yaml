@@ -29,13 +29,11 @@ jobs:
           aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EOF
 
-      - uses: cachix/install-nix-action@v14
+      - uses: nixbuild/nix-quick-install-action@v7
         with:
-          install_url: https://nixos-nix-install-tests.cachix.org/serve/vij683ly7sl95nnhb67bdjjfabclr85m/install
-          install_options: '--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve'
-          extra_nix_config: |
+          nix_version: 2.4pre20210908_3c56f62
+          nix_conf: |
             experimental-features = nix-command flakes
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
             substituters = ${{ env.NIX_CACHE_S3 }} https://cache.nixos.org/
             trusted-users = root runner
 
