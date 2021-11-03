@@ -40,7 +40,7 @@ jobs:
       - name: Info
         run: |
           nix show-derivation
-          nix path-info
+          nix path-info || true
 
       - name: Build
         run: nix build -v
