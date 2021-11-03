@@ -6,6 +6,7 @@ in
 mkShell {
   buildInputs = [
     denoBin
-    awscli2
+    # awscli2
+    kubectl
   ];
 }

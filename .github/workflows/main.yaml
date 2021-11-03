@@ -50,11 +50,11 @@ jobs:
 
       - name: Info
         run: |
-          nix show-derivation
-          nix path-info || true
+          nix show-derivation .#devEnv
+          nix path-info .#devEnv || true
 
       - name: Build
-        run: nix build -v
+        run: nix build .#devEnv -v
 
       - name: Test
         run: nix develop -c ./ci.sh
