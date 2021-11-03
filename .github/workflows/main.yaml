@@ -62,5 +62,5 @@ jobs:
       - name: Update nix cache
         if: github.ref == 'refs/heads/main'
         run: |
-          nix store sign -k ~/.secrets/nix-cache-key -v
-          nix copy --to '${{ env.NIX_CACHE_S3 }}' -v
+          nix store sign .#devEnv -k ~/.secrets/nix-cache-key -v
+          nix copy .#devEnv --to '${{ env.NIX_CACHE_S3 }}' -v

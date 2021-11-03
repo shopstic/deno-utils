@@ -15,6 +15,9 @@
           buildInputs = devShell.buildInputs;
           installPhase = "mkdir -p $out";
         };
+        packages = {
+          devEnv = defaultPackage.inputDerivation;
+        };
       }
     );
 }
