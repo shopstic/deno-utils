@@ -7,26 +7,27 @@ defaults:
     shell: bash
 
 jobs:
-  determine-env:
-    name: Determine environment
-    runs-on: ubuntu-20.04
-    outputs:
-      name: ${{ steps.env.outputs.name }}
-    steps:
-      - id: env
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "::set-output name=name::main"
-          else
-            echo "::set-output name=name::feature"
-          fi
+  # determine-env:
+  #   name: Determine environment
+  #   runs-on: ubuntu-20.04
+  #   outputs:
+  #     name: ${{ steps.env.outputs.name }}
+  #   steps:
+  #     - id: env
+  #       run: |
+  #         if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+  #           echo "::set-output name=name::main"
+  #         else
+  #           echo "::set-output name=name::feature"
+  #         fi
 
   build:
     name: Build 
     runs-on: ubuntu-20.04
-    needs: determine-env
+    # needs: determine-env
     environment:
-      name: ${{ needs.determine-env.outputs.name }}
+      # name: ${{ needs.determine-env.outputs.name }}
+      name: main
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
 
