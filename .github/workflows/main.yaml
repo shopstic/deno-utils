@@ -40,7 +40,7 @@ jobs:
           nixCacheS3SecretAccessKey: ${{ secrets.NIX_CACHE_S3_SECRET_ACCESS_KEY }}
 
       - name: Build dev env
-        run: nix build -L -vv
+        run: nix build -L -v --no-link
 
       - name: Test
         run: nix develop -v -c ./ci.sh
