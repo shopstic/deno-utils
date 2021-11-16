@@ -29,14 +29,25 @@ export class ExitCode {
   }
 }
 
+function waitForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
+  return new Promise((resolve) => {
+    function listener() {
+      // deno-lint-ignore ban-ts-comment
+      // @ts-ignore
+      Deno.removeSignalListener(signal, listener);
+      resolve(undefined);
+    }
+
+    // deno-lint-ignore ban-ts-comment
+    // @ts-ignore
+    Deno.addSignalListener(signal, listener);
+  });
+}
+
 async function waitForExitSignal(): Promise<ExitCode> {
   await Promise.race([
-    // deno-lint-ignore ban-ts-comment
-    // @ts-ignore
-    Deno.signal("SIGINT"),
-    // deno-lint-ignore ban-ts-comment
-    // @ts-ignore
-    Deno.signal("SIGTERM"),
+    waitForSignal("SIGINT"),
+    waitForSignal("SIGTERM"),
   ]);
 
   return new ExitCode(123);
