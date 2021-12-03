@@ -29,7 +29,7 @@ export class ExitCode {
   }
 }
 
-function waitForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
+export function waitForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
   return new Promise((resolve) => {
     function listener() {
       // deno-lint-ignore ban-ts-comment

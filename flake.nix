@@ -2,27 +2,21 @@
   description = "Deno Utils";
 
   inputs = {
-    flakeUtils = {
-      url = "github:numtide/flake-utils";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nixHotPot = {
-      url = "github:shopstic/nix-hot-pot";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flakeUtils.follows = "flakeUtils";
-    };
+    hotPot.url = "github:shopstic/nix-hot-pot";
+    flakeUtils.follows = "hotPot/flakeUtils";
+    nixpkgs.follows = "hotPot/nixpkgs";
   };
 
-  outputs = { self, nixpkgs, flakeUtils, nixHotPot }:
+  outputs = { self, nixpkgs, flakeUtils, hotPot }:
     flakeUtils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
       let
-        pkgs = nixpkgs.legacyPackages.${system};
-        hotPot = nixHotPot.packages.${system};
+        pkgs = import nixpkgs { inherit system; };
+        hotPotPkgs = hotPot.packages.${system};
       in
       rec {
         devShell = pkgs.mkShellNoCC {
           buildInputs = [
-            hotPot.deno
+            hotPotPkgs.deno
           ];
         };
         defaultPackage = devShell.inputDerivation;
