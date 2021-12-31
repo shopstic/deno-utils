@@ -1,4 +1,4 @@
-import { assertEquals, assertThrowsAsync } from "./deps/std_testing.ts";
+import { assertEquals, assertRejects } from "./deps/std_testing.ts";
 import { captureExec, inheritExec } from "./exec_utils.ts";
 
 Deno.test("captureExec", async () => {
@@ -21,7 +21,7 @@ Deno.test("inheritExec ok", async () => {
 });
 
 Deno.test("inheritExec error", async () => {
-  await assertThrowsAsync(() =>
+  await assertRejects(() =>
     inheritExec({
       run: {
         cmd: ["bash"],

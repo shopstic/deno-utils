@@ -12,12 +12,35 @@
       let
         pkgs = import nixpkgs { inherit system; };
         hotPotPkgs = hotPot.packages.${system};
+        deno = hotPotPkgs.deno;
+        vscodeSettings = pkgs.writeTextFile {
+          name = "vscode-settings.json";
+          text = builtins.toJSON {
+            "deno.enable" = true;
+            "deno.lint" = true;
+            "deno.unstable" = true;
+            "deno.path" = deno + "/bin/deno";
+            "deno.suggest.imports.hosts" = {
+              "https://deno.land" = false;
+            };
+            "editor.tabSize" = 2;
+            "[typescript]" = {
+              "editor.defaultFormatter" = "denoland.vscode-deno";
+              "editor.formatOnSave" = true;
+            };
+            "nix.enableLanguageServer" = true;
+            "nix.formatterPath" = pkgs.nixpkgs-fmt + "/bin/nixpkgs-fmt";
+            "nix.serverPath" = pkgs.rnix-lsp + "/bin/rnix-lsp";
+          };
+        };
       in
       rec {
         devShell = pkgs.mkShellNoCC {
-          buildInputs = [
-            hotPotPkgs.deno
-          ];
+          buildInputs = [ deno ];
+          shellHook = ''
+            mkdir -p ./.vscode
+            cat ${vscodeSettings} > ./.vscode/settings.json
+          '';
         };
         defaultPackage = devShell.inputDerivation;
       }

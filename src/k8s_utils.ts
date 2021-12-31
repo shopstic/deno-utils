@@ -73,9 +73,9 @@ export const K8sResourceSchema = RelaxedObject({
   metadata: RelaxedObject({
     name: Type.String(),
     namespace: Type.Optional(Type.String()),
-    labels: Type.Optional(Type.Dict(Type.String())),
+    labels: Type.Optional(Type.Record(Type.String(), Type.String())),
     annotations: Type.Optional(Type.Union(
-      [Type.Dict(Type.String()), Type.Null()],
+      [Type.Record(Type.String(), Type.String()), Type.Null()],
     )),
   }),
 });

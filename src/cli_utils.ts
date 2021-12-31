@@ -1,13 +1,15 @@
 import { parseCliArgs } from "./deps/std_flags.ts";
-import { Static, TObject, TProperties, TSchema } from "./deps/typebox.ts";
+import { CustomOptions, Static, TObject, TProperties } from "./deps/typebox.ts";
 import { validate } from "./validation_utils.ts";
 
-interface CliAction<T extends TProperties> {
+interface CliAction<T extends TProperties & { [key: string]: CustomOptions }> {
   args: TObject<T>;
   action: (args: Static<TObject<T>>) => Promise<ExitCode>;
 }
 
-export function createCliAction<T extends TProperties>(
+export function createCliAction<
+  T extends TProperties & { [key: string]: CustomOptions },
+>(
   args: TObject<T>,
   action: (a: Static<TObject<T>>) => Promise<ExitCode>,
 ): CliAction<T> {
@@ -53,7 +55,7 @@ async function waitForExitSignal(): Promise<ExitCode> {
   return new ExitCode(123);
 }
 
-function jsonSchemaToTypeName(schema: TSchema): string {
+function jsonSchemaToTypeName(schema: CustomOptions): string {
   if (schema.const !== undefined) {
     return JSON.stringify(schema.const);
   }
@@ -116,7 +118,7 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     );
   }
 
-  printActionError<P extends TProperties>(
+  printActionError<P extends TProperties & { [key: string]: CustomOptions }>(
     error: string,
     command: string,
     action: CliAction<P>,
