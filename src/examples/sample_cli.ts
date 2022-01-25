@@ -43,6 +43,37 @@ const foo = createCliAction(
   },
 );
 
+const bar = createCliAction(
+  Type.Object({
+    name: Type.String({
+      description: "The name of the JDK to add to the table",
+      examples: ["my-app-jdk"],
+    }),
+    jdkPath: Type.String({
+      description: "Absolute path to a JDK home to add to the table",
+      examples: ["/path/to/jdk"],
+    }),
+    jdkTableXmlPath: Type.String({
+      description: "Absolute path to Intellij's jdk.table.xml file",
+      examples: [
+        "/Users/foo/Library/Application Support/JetBrains/IntelliJIdea2021.2/options/jdk.table.xml",
+      ],
+    }),
+    inPlace: Type.Optional(Type.Boolean({
+      description: "Whether to patch the XML file in-place",
+      examples: [false],
+      default: false,
+    })),
+  }),
+  async (args) => {
+    console.log("Got args", args);
+    console.log("Will exit in 1 second");
+    await delay(1000);
+    return ExitCode.Zero;
+  },
+);
+
 await new CliProgram()
   .addAction("foo", foo)
+  .addAction("bar", bar)
   .run(Deno.args);
