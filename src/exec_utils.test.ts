@@ -30,3 +30,41 @@ Deno.test("inheritExec error", async () => {
     })
   );
 });
+
+Deno.test("inheritExec abort after a timeout", async () => {
+  const abortController = new AbortController();
+  const promise = inheritExec({
+    run: {
+      cmd: [
+        "bash",
+        "-c",
+        "trap exit TERM; while true; do echo 'still running...'; sleep .5; done",
+      ],
+    },
+    abortSignal: abortController.signal,
+  });
+
+  setTimeout(() => {
+    abortController.abort();
+  }, 2000);
+
+  await promise;
+});
+
+Deno.test("inheritExec abort before running", async () => {
+  const abortController = new AbortController();
+  abortController.abort();
+
+  await assertRejects(() =>
+    inheritExec({
+      run: {
+        cmd: [
+          "bash",
+          "-c",
+          "trap exit TERM; while true; do echo 'still running...'; sleep .5; done",
+        ],
+      },
+      abortSignal: abortController.signal,
+    })
+  );
+});

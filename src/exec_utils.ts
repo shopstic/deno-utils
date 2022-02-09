@@ -31,6 +31,7 @@ async function _inheritExec(
     stdin,
     stdoutTag,
     stderrTag,
+    abortSignal,
     ignoreStdout = false,
     ignoreStderr = false,
   }: {
@@ -38,11 +39,16 @@ async function _inheritExec(
     ignoreStdout?: boolean;
     ignoreStderr?: boolean;
     stdin?: string | Deno.Reader;
+    abortSignal?: AbortSignal;
     stdoutTag?: string;
     stderrTag?: string;
   },
 ): Promise<number> {
   const stdinOpt = (stdin !== undefined) ? "piped" : "null";
+
+  if (abortSignal?.aborted) {
+    return 143;
+  }
 
   const child = Deno.run({
     ...run,
@@ -51,7 +57,19 @@ async function _inheritExec(
     stderr: ignoreStderr ? "null" : "piped",
   });
 
+  const onAbort = () => {
+    child.kill("SIGTERM");
+  };
+
   try {
+    if (abortSignal) {
+      if (abortSignal.aborted) {
+        onAbort();
+      } else {
+        abortSignal.addEventListener("abort", onAbort);
+      }
+    }
+
     const stdinPromise = (() => {
       if (typeof stdin === "string") {
         return writeAll(child.stdin!, new TextEncoder().encode(stdin))
@@ -96,6 +114,8 @@ async function _inheritExec(
 
     return code;
   } finally {
+    abortSignal?.removeEventListener("abort", onAbort);
+
     if (!ignoreStdout) {
       child.stdout!.close();
     }
