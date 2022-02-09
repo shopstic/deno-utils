@@ -18,10 +18,10 @@ Deno.test("inheritExec ok", async () => {
   await inheritExec({
     cmd: ["bash"],
     stdin: {
-      pipe: "echo >&2 'some stderr output'; exit 0",
+      pipe: "echo >&2 'some stderr output that should be ignore'; exit 0",
     },
     stderr: {
-      bufferLines: true,
+      ignore: true,
     },
   });
 });

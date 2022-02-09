@@ -36,25 +36,65 @@ export class AbortedError extends Error {
 }
 
 export type StdOutputBehavior = {
-  bufferLinesWithTag: string;
-} | {
-  bufferLines: true;
+  bufferLinesWithTag?: string;
 } | {
   inherit: true;
+} | {
+  ignore: true;
 };
 
 export type StdInputBehavior = {
   pipe: string | Deno.Reader;
 } | {
   inherit: true;
+} | {
+  ignore: true;
 };
+
+function createStdoutOpt(
+  config: StdOutputBehavior,
+): "inherit" | "null" | "piped" {
+  if ("ignore" in config) {
+    return "null";
+  }
+
+  if ("inherit" in config) {
+    return "inherit";
+  }
+
+  if ("bufferLinesWithTag" in config) {
+    return "piped";
+  }
+
+  throw new Error("Non exhaustive matching");
+}
+
+function createStdinOpt(
+  config: StdInputBehavior,
+): "inherit" | "null" | "piped" {
+  if ("ignore" in config) {
+    return "null";
+  }
+
+  if ("inherit" in config) {
+    return "inherit";
+  }
+
+  if ("pipe" in config) {
+    return "piped";
+  }
+
+  throw new Error("Non exhaustive matching");
+}
 
 async function _inheritExec(
   {
     abortSignal,
-    stdin,
-    stdout = { bufferLines: true },
-    stderr = { bufferLines: true },
+    stdin = {
+      ignore: true,
+    },
+    stdout = { bufferLinesWithTag: undefined },
+    stderr = { bufferLinesWithTag: undefined },
     ...run
   }: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin"> & {
     abortSignal?: AbortSignal;
@@ -63,25 +103,15 @@ async function _inheritExec(
     stderr?: StdOutputBehavior;
   },
 ): Promise<number> {
-  const stdinOpt = (stdin)
-    ? (("inherit" in stdin) ? "inherit" : "piped")
-    : "null";
-  const stdoutOpt = (stdout)
-    ? (("inherit" in stdout) ? "inherit" : "piped")
-    : "null";
-  const stderrOpt = (stderr)
-    ? (("inherit" in stderr) ? "inherit" : "piped")
-    : "null";
-
   if (abortSignal?.aborted) {
     return 143;
   }
 
   const child = Deno.run({
     ...run,
-    stdin: stdinOpt,
-    stdout: stdoutOpt,
-    stderr: stderrOpt,
+    stdin: createStdinOpt(stdin),
+    stdout: createStdoutOpt(stdout),
+    stderr: createStdoutOpt(stderr),
   });
 
   const onAbort = () => {
@@ -98,7 +128,7 @@ async function _inheritExec(
     }
 
     const stdinPromise = (() => {
-      if (!stdin || "inherit" in stdin) {
+      if ("ignore" in stdin || "inherit" in stdin) {
         return Promise.resolve();
       } else {
         if (typeof stdin.pipe === "string") {
@@ -113,10 +143,10 @@ async function _inheritExec(
     })();
 
     const stdoutPromise = (async () => {
-      if (!stdout || "inherit" in stdout) {
+      if ("ignore" in stdout || "inherit" in stdout) {
         return;
       } else {
-        const prefix = ("bufferLinesWithTag" in stdout)
+        const prefix = stdout.bufferLinesWithTag
           ? stdout.bufferLinesWithTag + " "
           : "";
 
@@ -130,10 +160,10 @@ async function _inheritExec(
     })();
 
     const stderrPromise = (async () => {
-      if (!stderr || "inherit" in stderr) {
+      if ("ignore" in stderr || "inherit" in stderr) {
         return;
       } else {
-        const prefix = ("bufferLinesWithTag" in stderr)
+        const prefix = stderr.bufferLinesWithTag
           ? stderr.bufferLinesWithTag + " "
           : "";
 
@@ -184,7 +214,12 @@ export async function inheritExec(
 }
 
 export async function captureExec(
-  { stdin, stderr = { bufferLines: true }, abortSignal, ...run }:
+  {
+    stdin = { ignore: true },
+    stderr = { bufferLinesWithTag: undefined },
+    abortSignal,
+    ...run
+  }:
     & Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">
     & {
       abortSignal?: AbortSignal;
@@ -192,18 +227,11 @@ export async function captureExec(
       stderr?: StdOutputBehavior;
     },
 ): Promise<string> {
-  const stdinOpt = (stdin)
-    ? (("inherit" in stdin) ? "inherit" : "piped")
-    : "null";
-  const stderrOpt = (stderr)
-    ? (("inherit" in stderr) ? "inherit" : "piped")
-    : "null";
-
   const child = Deno.run({
     ...run,
-    stdin: stdinOpt,
+    stdin: createStdinOpt(stdin),
     stdout: "piped",
-    stderr: stderrOpt,
+    stderr: createStdoutOpt(stderr),
   });
 
   const onAbort = () => {
@@ -220,7 +248,7 @@ export async function captureExec(
     }
 
     const stdinPromise = (() => {
-      if (!stdin || "inherit" in stdin) {
+      if ("ignore" in stdin || "inherit" in stdin) {
         return Promise.resolve();
       } else {
         if (typeof stdin.pipe === "string") {
@@ -235,10 +263,10 @@ export async function captureExec(
     })();
 
     const stderrPromise = (async () => {
-      if (!stderr || "inherit" in stderr) {
+      if ("ignore" in stderr || "inherit" in stderr) {
         return;
       } else {
-        const prefix = ("bufferLinesWithTag" in stderr)
+        const prefix = stderr.bufferLinesWithTag
           ? stderr.bufferLinesWithTag + " "
           : "";
 
