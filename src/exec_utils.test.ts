@@ -67,7 +67,7 @@ Deno.test("inheritExec abort after a timeout", async () => {
       "trap exit TERM; while true; do echo 'still running...'; >&2 echo 'stderr still running...'; sleep 1; done",
     ],
     stdout: {
-      bufferLinesWithTag: "[stdout tag]",
+      bufferLines: (line: string) => `[stdout tag] ${line}`,
     },
     stderr: {
       inherit: true,

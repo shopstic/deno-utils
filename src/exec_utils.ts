@@ -7,7 +7,7 @@ const ansiPattern = [
 
 const ansiRegex = new RegExp(ansiPattern, "g");
 
-function stripAnsi(s: string): string {
+export function stripAnsi(s: string): string {
   return s.replace(ansiRegex, "").split("").filter((x) => {
     const n = x.charCodeAt(0);
     return 31 < n && 127 > n;
@@ -36,7 +36,7 @@ export class AbortedError extends Error {
 }
 
 export type StdOutputBehavior = {
-  bufferLinesWithTag?: string;
+  bufferLines: ((line: string) => string) | undefined;
 } | {
   inherit: true;
 } | {
@@ -51,6 +51,10 @@ export type StdInputBehavior = {
   ignore: true;
 };
 
+function exhaustiveMatchingGuard(_: never): never {
+  throw new Error("Non exhaustive matching");
+}
+
 function createStdoutOpt(
   config: StdOutputBehavior,
 ): "inherit" | "null" | "piped" {
@@ -62,11 +66,11 @@ function createStdoutOpt(
     return "inherit";
   }
 
-  if ("bufferLinesWithTag" in config) {
+  if ("bufferLines" in config) {
     return "piped";
   }
 
-  throw new Error("Non exhaustive matching");
+  return exhaustiveMatchingGuard(config);
 }
 
 function createStdinOpt(
@@ -84,7 +88,7 @@ function createStdinOpt(
     return "piped";
   }
 
-  throw new Error("Non exhaustive matching");
+  return exhaustiveMatchingGuard(config);
 }
 
 async function _inheritExec(
@@ -93,8 +97,8 @@ async function _inheritExec(
     stdin = {
       ignore: true,
     },
-    stdout = { bufferLinesWithTag: undefined },
-    stderr = { bufferLinesWithTag: undefined },
+    stdout = { inherit: true },
+    stderr = { inherit: true },
     ...run
   }: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin"> & {
     abortSignal?: AbortSignal;
@@ -146,14 +150,12 @@ async function _inheritExec(
       if ("ignore" in stdout || "inherit" in stdout) {
         return;
       } else {
-        const prefix = stdout.bufferLinesWithTag
-          ? stdout.bufferLinesWithTag + " "
-          : "";
+        const tranformLine = stdout.bufferLines ?? stripAnsi;
 
         for await (const line of readLines(child.stdout!)) {
-          const printableLine = stripAnsi(line);
+          const printableLine = tranformLine(line);
           if (printableLine.length > 0) {
-            console.log(`${prefix}${printableLine}`);
+            console.log(printableLine);
           }
         }
       }
@@ -163,14 +165,12 @@ async function _inheritExec(
       if ("ignore" in stderr || "inherit" in stderr) {
         return;
       } else {
-        const prefix = stderr.bufferLinesWithTag
-          ? stderr.bufferLinesWithTag + " "
-          : "";
+        const tranformLine = stderr.bufferLines ?? stripAnsi;
 
         for await (const line of readLines(child.stderr!)) {
-          const printableLine = stripAnsi(line);
+          const printableLine = tranformLine(line);
           if (printableLine.length > 0) {
-            console.log(`${prefix}${printableLine}`);
+            console.log(printableLine);
           }
         }
       }
@@ -216,7 +216,7 @@ export async function inheritExec(
 export async function captureExec(
   {
     stdin = { ignore: true },
-    stderr = { bufferLinesWithTag: undefined },
+    stderr = { inherit: true },
     abortSignal,
     ...run
   }:
@@ -266,14 +266,12 @@ export async function captureExec(
       if ("ignore" in stderr || "inherit" in stderr) {
         return;
       } else {
-        const prefix = stderr.bufferLinesWithTag
-          ? stderr.bufferLinesWithTag + " "
-          : "";
+        const tranformLine = stderr.bufferLines ?? stripAnsi;
 
         for await (const line of readLines(child.stderr!)) {
-          const printableLine = stripAnsi(line);
+          const printableLine = tranformLine(line);
           if (printableLine.length > 0) {
-            console.log(`${prefix}${printableLine}`);
+            console.log(printableLine);
           }
         }
       }
