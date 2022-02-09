@@ -3,43 +3,74 @@ import { captureExec, inheritExec } from "./exec_utils.ts";
 
 Deno.test("captureExec", async () => {
   const result = await captureExec({
-    run: {
-      cmd: ["bash"],
+    cmd: ["bash"],
+    stdin: {
+      pipe: "echo >&2 'some stderr output'; printf '123'",
     },
-    stdin: "printf '123'",
+    stderr: {
+      inherit: true,
+    },
   });
   assertEquals(result, "123");
 });
 
 Deno.test("inheritExec ok", async () => {
   await inheritExec({
-    run: {
-      cmd: ["bash"],
+    cmd: ["bash"],
+    stdin: {
+      pipe: "echo >&2 'some stderr output'; exit 0",
     },
-    stdin: "exit 0",
+    stderr: {
+      bufferLines: true,
+    },
   });
 });
 
 Deno.test("inheritExec error", async () => {
   await assertRejects(() =>
     inheritExec({
-      run: {
-        cmd: ["bash"],
+      cmd: ["bash"],
+      stdin: {
+        pipe: "exit 123",
       },
-      stdin: "exit 123",
     })
   );
+});
+
+Deno.test("captureExec abort after a timeout", async () => {
+  const abortController = new AbortController();
+  const promise = captureExec({
+    cmd: [
+      "bash",
+      "-c",
+      "trap exit TERM; while true; do echo 'still running...'; >&2 echo 'stderr still running...'; sleep 1; done",
+    ],
+    stderr: {
+      inherit: true,
+    },
+    abortSignal: abortController.signal,
+  });
+
+  setTimeout(() => {
+    abortController.abort();
+  }, 2000);
+
+  await assertRejects(() => promise);
 });
 
 Deno.test("inheritExec abort after a timeout", async () => {
   const abortController = new AbortController();
   const promise = inheritExec({
-    run: {
-      cmd: [
-        "bash",
-        "-c",
-        "trap exit TERM; while true; do echo 'still running...'; sleep .5; done",
-      ],
+    cmd: [
+      "bash",
+      "-c",
+      "trap exit TERM; while true; do echo 'still running...'; >&2 echo 'stderr still running...'; sleep 1; done",
+    ],
+    stdout: {
+      bufferLinesWithTag: "[stdout tag]",
+    },
+    stderr: {
+      inherit: true,
     },
     abortSignal: abortController.signal,
   });
@@ -57,13 +88,11 @@ Deno.test("inheritExec abort before running", async () => {
 
   await assertRejects(() =>
     inheritExec({
-      run: {
-        cmd: [
-          "bash",
-          "-c",
-          "trap exit TERM; while true; do echo 'still running...'; sleep .5; done",
-        ],
-      },
+      cmd: [
+        "bash",
+        "-c",
+        "trap exit TERM; while true; do echo 'still running...'; sleep .5; done",
+      ],
       abortSignal: abortController.signal,
     })
   );

@@ -25,31 +25,53 @@ export class NonZeroExitError extends Error {
   }
 }
 
+export class AbortedError extends Error {
+  constructor(
+    message: string,
+    public output?: string,
+  ) {
+    super(message);
+    this.name = "AbortedError";
+  }
+}
+
+export type StdOutputBehavior = {
+  bufferLinesWithTag: string;
+} | {
+  bufferLines: true;
+} | {
+  inherit: true;
+};
+
+export type StdInputBehavior = {
+  pipe: string | Deno.Reader;
+} | {
+  inherit: true;
+};
+
 async function _inheritExec(
   {
-    run,
-    stdin,
-    stdoutTag,
-    stderrTag,
     abortSignal,
-    ignoreStdout = false,
-    ignoreStderr = false,
-  }: {
-    run: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">;
-    ignoreStdout?: boolean;
-    ignoreStderr?: boolean;
-    stdin?:
-      | true
-      | string
-      | Deno.Reader; /* will inherit if true, else it will be piped */
+    stdin,
+    stdout = { bufferLines: true },
+    stderr = { bufferLines: true },
+    ...run
+  }: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin"> & {
     abortSignal?: AbortSignal;
-    stdoutTag?: string;
-    stderrTag?: string;
+    stdin?: StdInputBehavior;
+    stdout?: StdOutputBehavior;
+    stderr?: StdOutputBehavior;
   },
 ): Promise<number> {
-  const stdinOpt = (stdin === true)
-    ? "inherit"
-    : ((typeof stdin !== "undefined") ? "piped" : "null");
+  const stdinOpt = (stdin)
+    ? (("inherit" in stdin) ? "inherit" : "piped")
+    : "null";
+  const stdoutOpt = (stdout)
+    ? (("inherit" in stdout) ? "inherit" : "piped")
+    : "null";
+  const stderrOpt = (stderr)
+    ? (("inherit" in stderr) ? "inherit" : "piped")
+    : "null";
 
   if (abortSignal?.aborted) {
     return 143;
@@ -58,8 +80,8 @@ async function _inheritExec(
   const child = Deno.run({
     ...run,
     stdin: stdinOpt,
-    stdout: ignoreStdout ? "null" : "piped",
-    stderr: ignoreStderr ? "null" : "piped",
+    stdout: stdoutOpt,
+    stderr: stderrOpt,
   });
 
   const onAbort = () => {
@@ -76,35 +98,50 @@ async function _inheritExec(
     }
 
     const stdinPromise = (() => {
-      if (typeof stdin === "string") {
-        return writeAll(child.stdin!, new TextEncoder().encode(stdin))
-          .finally(() => child.stdin!.close());
-      } else if (typeof stdin === "object") {
-        return copy(stdin as Deno.Reader, child.stdin!)
-          .then(() => {})
-          .finally(() => child.stdin!.close());
-      } else {
+      if (!stdin || "inherit" in stdin) {
         return Promise.resolve();
-      }
-    })();
-
-    const stdoutPrefix = stdoutTag !== undefined ? stdoutTag + " " : "";
-    const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
-
-    const stdoutPromise = ignoreStdout ? Promise.resolve() : (async () => {
-      for await (const line of readLines(child.stdout!)) {
-        const printableLine = stripAnsi(line);
-        if (printableLine.length > 0) {
-          console.log(`${stdoutPrefix}${printableLine}`);
+      } else {
+        if (typeof stdin.pipe === "string") {
+          return writeAll(child.stdin!, new TextEncoder().encode(stdin.pipe))
+            .finally(() => child.stdin!.close());
+        } else {
+          return copy(stdin.pipe, child.stdin!)
+            .then(() => {})
+            .finally(() => child.stdin!.close());
         }
       }
     })();
 
-    const stderrPromise = ignoreStderr ? Promise.resolve() : (async () => {
-      for await (const line of readLines(child.stderr!)) {
-        const printableLine = stripAnsi(line);
-        if (printableLine.length > 0) {
-          console.error(`${stderrPrefix}${printableLine}`);
+    const stdoutPromise = (async () => {
+      if (!stdout || "inherit" in stdout) {
+        return;
+      } else {
+        const prefix = ("bufferLinesWithTag" in stdout)
+          ? stdout.bufferLinesWithTag + " "
+          : "";
+
+        for await (const line of readLines(child.stdout!)) {
+          const printableLine = stripAnsi(line);
+          if (printableLine.length > 0) {
+            console.log(`${prefix}${printableLine}`);
+          }
+        }
+      }
+    })();
+
+    const stderrPromise = (async () => {
+      if (!stderr || "inherit" in stderr) {
+        return;
+      } else {
+        const prefix = ("bufferLinesWithTag" in stderr)
+          ? stderr.bufferLinesWithTag + " "
+          : "";
+
+        for await (const line of readLines(child.stderr!)) {
+          const printableLine = stripAnsi(line);
+          if (printableLine.length > 0) {
+            console.log(`${prefix}${printableLine}`);
+          }
         }
       }
     })();
@@ -121,14 +158,8 @@ async function _inheritExec(
   } finally {
     abortSignal?.removeEventListener("abort", onAbort);
 
-    if (!ignoreStdout) {
-      child.stdout!.close();
-    }
-
-    if (!ignoreStderr) {
-      child.stderr!.close();
-    }
-
+    child.stdout?.close();
+    child.stderr?.close();
     child.close();
   }
 }
@@ -153,43 +184,69 @@ export async function inheritExec(
 }
 
 export async function captureExec(
-  { run, stdin, ignoreStderr = false, stderrTag }: {
-    run: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">;
-    stdin?: string | Deno.Reader;
-    ignoreStderr?: boolean;
-    stderrTag?: string;
-  },
+  { stdin, stderr = { bufferLines: true }, abortSignal, ...run }:
+    & Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">
+    & {
+      abortSignal?: AbortSignal;
+      stdin?: StdInputBehavior;
+      stderr?: StdOutputBehavior;
+    },
 ): Promise<string> {
-  const stdinOpt = (stdin !== undefined) ? "piped" : "null";
+  const stdinOpt = (stdin)
+    ? (("inherit" in stdin) ? "inherit" : "piped")
+    : "null";
+  const stderrOpt = (stderr)
+    ? (("inherit" in stderr) ? "inherit" : "piped")
+    : "null";
 
   const child = Deno.run({
     ...run,
     stdin: stdinOpt,
     stdout: "piped",
-    stderr: ignoreStderr ? "null" : "piped",
+    stderr: stderrOpt,
   });
 
+  const onAbort = () => {
+    child.kill("SIGTERM");
+  };
+
   try {
-    const stdinPromise = (() => {
-      if (typeof stdin === "string") {
-        return writeAll(child.stdin!, new TextEncoder().encode(stdin))
-          .finally(() => child.stdin!.close());
-      } else if (typeof stdin === "object") {
-        return copy(stdin as Deno.Reader, child.stdin!)
-          .then(() => {})
-          .finally(() => child.stdin!.close());
+    if (abortSignal) {
+      if (abortSignal.aborted) {
+        onAbort();
       } else {
+        abortSignal.addEventListener("abort", onAbort);
+      }
+    }
+
+    const stdinPromise = (() => {
+      if (!stdin || "inherit" in stdin) {
         return Promise.resolve();
+      } else {
+        if (typeof stdin.pipe === "string") {
+          return writeAll(child.stdin!, new TextEncoder().encode(stdin.pipe))
+            .finally(() => child.stdin!.close());
+        } else {
+          return copy(stdin.pipe, child.stdin!)
+            .then(() => {})
+            .finally(() => child.stdin!.close());
+        }
       }
     })();
 
-    const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
+    const stderrPromise = (async () => {
+      if (!stderr || "inherit" in stderr) {
+        return;
+      } else {
+        const prefix = ("bufferLinesWithTag" in stderr)
+          ? stderr.bufferLinesWithTag + " "
+          : "";
 
-    const stderrPromise = ignoreStderr ? Promise.resolve() : (async () => {
-      for await (const line of readLines(child.stderr!)) {
-        const printableLine = stripAnsi(line);
-        if (printableLine.length > 0) {
-          console.error(`${stderrPrefix}${printableLine}`);
+        for await (const line of readLines(child.stderr!)) {
+          const printableLine = stripAnsi(line);
+          if (printableLine.length > 0) {
+            console.log(`${prefix}${printableLine}`);
+          }
         }
       }
     })();
@@ -206,11 +263,17 @@ export async function captureExec(
         code,
         captured,
       );
+    } else if (abortSignal?.aborted) {
+      throw new AbortedError(
+        `Command execution was aborted. Captured stdout up to this point: ${captured}`,
+        captured,
+      );
     }
 
     return captured;
   } finally {
-    if (!ignoreStderr) child.stderr!.close();
+    abortSignal?.removeEventListener("abort", onAbort);
+    child.stderr?.close();
     child.close();
   }
 }
