@@ -38,13 +38,18 @@ async function _inheritExec(
     run: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">;
     ignoreStdout?: boolean;
     ignoreStderr?: boolean;
-    stdin?: string | Deno.Reader;
+    stdin?:
+      | true
+      | string
+      | Deno.Reader; /* will inherit if true, else it will be piped */
     abortSignal?: AbortSignal;
     stdoutTag?: string;
     stderrTag?: string;
   },
 ): Promise<number> {
-  const stdinOpt = (stdin !== undefined) ? "piped" : "null";
+  const stdinOpt = (stdin === true)
+    ? "inherit"
+    : ((typeof stdin !== "undefined") ? "piped" : "null");
 
   if (abortSignal?.aborted) {
     return 143;
