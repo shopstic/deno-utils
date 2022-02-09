@@ -8,6 +8,7 @@ interface CliAction<T extends TProperties & { [key: string]: CustomOptions }> {
     args: Static<TObject<T>>,
     unparsedArgs: string[],
   ) => Promise<ExitCode>;
+  renderUsage?: (command: string, args: string[]) => string;
 }
 
 export function createCliAction<
@@ -15,10 +16,12 @@ export function createCliAction<
 >(
   argsSchema: TObject<T>,
   action: (args: Static<TObject<T>>, unparsed: string[]) => Promise<ExitCode>,
+  renderUsage?: (command: string, args: string[]) => string,
 ): CliAction<T> {
   return {
     argsSchema,
     action,
+    renderUsage,
   };
 }
 
@@ -172,12 +175,14 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
       })
       .join("\n");
 
+    const renderUsage = action.renderUsage ?? ((c, a) => `${c} ${a.join(" ")}`);
+
     console.error(
       `[Error] ${error}
 
 USAGE EXAMPLE:
 
-    ${command} ${usageArgs.join(" ")}
+    ${renderUsage(command, usageArgs)}
 
 ARGUMENTS:
 
