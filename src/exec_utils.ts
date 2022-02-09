@@ -148,9 +148,10 @@ export async function inheritExec(
 }
 
 export async function captureExec(
-  { run, stdin, stderrTag }: {
+  { run, stdin, ignoreStderr = false, stderrTag }: {
     run: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">;
     stdin?: string | Deno.Reader;
+    ignoreStderr?: boolean;
     stderrTag?: string;
   },
 ): Promise<string> {
@@ -160,7 +161,7 @@ export async function captureExec(
     ...run,
     stdin: stdinOpt,
     stdout: "piped",
-    stderr: "piped",
+    stderr: ignoreStderr ? "null" : "piped",
   });
 
   try {
@@ -179,7 +180,7 @@ export async function captureExec(
 
     const stderrPrefix = stderrTag !== undefined ? stderrTag + " " : "";
 
-    const stderrPromise = (async () => {
+    const stderrPromise = ignoreStderr ? Promise.resolve() : (async () => {
       for await (const line of readLines(child.stderr!)) {
         const printableLine = stripAnsi(line);
         if (printableLine.length > 0) {
@@ -204,7 +205,7 @@ export async function captureExec(
 
     return captured;
   } finally {
-    child.stderr!.close();
+    if (!ignoreStderr) child.stderr!.close();
     child.close();
   }
 }
