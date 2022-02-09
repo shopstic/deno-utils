@@ -17,10 +17,12 @@ Deno.test({
           port,
           proxyTarget,
         },
+        unparsedArgs,
       ) => {
         assertEquals(hostname, "foo");
         assertEquals(port, 12345);
         assertEquals(proxyTarget, "http://foo.bar");
+        assertEquals(unparsedArgs, ["some", "remaining", "args"]);
 
         return Promise.resolve(ExitCode.Zero);
       },
@@ -38,6 +40,10 @@ Deno.test({
         "12345",
         "--proxyTarget",
         "http://foo.bar",
+        "--",
+        "some",
+        "remaining",
+        "args",
       ]);
   },
 });

@@ -3,18 +3,21 @@ import { CustomOptions, Static, TObject, TProperties } from "./deps/typebox.ts";
 import { validate } from "./validation_utils.ts";
 
 interface CliAction<T extends TProperties & { [key: string]: CustomOptions }> {
-  args: TObject<T>;
-  action: (args: Static<TObject<T>>) => Promise<ExitCode>;
+  argsSchema: TObject<T>;
+  action: (
+    args: Static<TObject<T>>,
+    unparsedArgs: string[],
+  ) => Promise<ExitCode>;
 }
 
 export function createCliAction<
   T extends TProperties & { [key: string]: CustomOptions },
 >(
-  args: TObject<T>,
-  action: (a: Static<TObject<T>>) => Promise<ExitCode>,
+  argsSchema: TObject<T>,
+  action: (args: Static<TObject<T>>, unparsed: string[]) => Promise<ExitCode>,
 ): CliAction<T> {
   return {
-    args,
+    argsSchema,
     action,
   };
 }
@@ -123,7 +126,7 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     command: string,
     action: CliAction<P>,
   ): void {
-    const args = action.args;
+    const args = action.argsSchema;
     const requiredArgSet = new Set(args.required);
     const props = Object.entries(args.properties);
 
@@ -183,7 +186,14 @@ ${actionHelp}`,
   }
 
   async run(rawArgs: string[]) {
-    const { _, ...args } = parseCliArgs(rawArgs);
+    const parsed = parseCliArgs(rawArgs, {
+      "--": true,
+    });
+
+    const { _, ...args } = parsed;
+    const unparsedArgs: string[] = (Array.isArray(parsed["--"]))
+      ? parsed["--"]
+      : [];
 
     if (_.length !== 1) {
       if (_.length === 0) {
@@ -202,7 +212,7 @@ ${actionHelp}`,
       return Deno.exit(1);
     }
 
-    const validationResult = validate(action.args, args, {
+    const validationResult = validate(action.argsSchema, args, {
       coerceTypes: true,
       strict: "log",
       allErrors: true,
@@ -210,7 +220,7 @@ ${actionHelp}`,
 
     if (validationResult.isSuccess) {
       const exitCode = await Promise.race([
-        action.action(validationResult.value),
+        action.action(validationResult.value, unparsedArgs),
         waitForExitSignal(),
       ]);
 
