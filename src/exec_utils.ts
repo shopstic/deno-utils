@@ -14,6 +14,26 @@ export function stripAnsi(s: string): string {
   }).join("");
 }
 
+export function printOutLines(
+  mapper: (line: string) => string = (line) => line,
+) {
+  return async function (reader: Deno.Reader & Deno.Closer) {
+    for await (const line of readLines(reader)) {
+      console.log(mapper(line));
+    }
+  };
+}
+
+export function printErrLines(
+  mapper: (line: string) => string = (line) => line,
+) {
+  return async function (reader: Deno.Reader & Deno.Closer) {
+    for await (const line of readLines(reader)) {
+      console.error(mapper(line));
+    }
+  };
+}
+
 export class NonZeroExitError extends Error {
   constructor(
     message: string,
@@ -42,7 +62,7 @@ export class AbortedError extends Error {
 }
 
 export type StdOutputBehavior = {
-  bufferLines: ((line: string) => string) | undefined;
+  read: (reader: Deno.Reader & Deno.Closer) => Promise<void>;
 } | {
   inherit: true;
 } | {
@@ -72,7 +92,7 @@ function createStdoutOpt(
     return "inherit";
   }
 
-  if ("bufferLines" in config) {
+  if ("read" in config) {
     return "piped";
   }
 
@@ -152,35 +172,13 @@ async function _inheritExec(
       }
     })();
 
-    const stdoutPromise = (async () => {
-      if ("ignore" in stdout || "inherit" in stdout) {
-        return;
-      } else {
-        const tranformLine = stdout.bufferLines ?? stripAnsi;
+    const stdoutPromise = ("ignore" in stdout || "inherit" in stdout)
+      ? Promise.resolve()
+      : stdout.read(child.stdout!);
 
-        for await (const line of readLines(child.stdout!)) {
-          const printableLine = tranformLine(line);
-          if (printableLine.length > 0) {
-            console.log(printableLine);
-          }
-        }
-      }
-    })();
-
-    const stderrPromise = (async () => {
-      if ("ignore" in stderr || "inherit" in stderr) {
-        return;
-      } else {
-        const tranformLine = stderr.bufferLines ?? stripAnsi;
-
-        for await (const line of readLines(child.stderr!)) {
-          const printableLine = tranformLine(line);
-          if (printableLine.length > 0) {
-            console.log(printableLine);
-          }
-        }
-      }
-    })();
+    const stderrPromise = ("ignore" in stderr || "inherit" in stderr)
+      ? Promise.resolve()
+      : stderr.read(child.stderr!);
 
     await Promise.all([
       stdinPromise,
@@ -276,14 +274,8 @@ export async function captureExec(
       } else if ("capture" in stderr) {
         return child.stderrOutput();
       } else {
-        const tranformLine = stderr.bufferLines ?? stripAnsi;
-
-        for await (const line of readLines(child.stderr!)) {
-          const printableLine = tranformLine(line);
-          if (printableLine.length > 0) {
-            console.log(printableLine);
-          }
-        }
+        await stderr.read(child.stderr!);
+        return;
       }
     })();
 
