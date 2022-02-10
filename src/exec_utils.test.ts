@@ -7,11 +7,46 @@ Deno.test("captureExec", async () => {
     stdin: {
       pipe: "echo >&2 'some stderr output'; printf '123'",
     },
+  });
+
+  assertEquals(result, {
+    out: "123",
+    err: "some stderr output\n",
+  });
+});
+
+Deno.test("captureExec with inherit stderr", async () => {
+  const result = await captureExec({
+    cmd: ["bash"],
+    stdin: {
+      pipe: "echo >&2 'some stderr output'; printf '123'",
+    },
     stderr: {
       inherit: true,
     },
   });
-  assertEquals(result, "123");
+
+  assertEquals(result, {
+    out: "123",
+    err: "",
+  });
+});
+
+Deno.test("captureExec with piped stderr", async () => {
+  const result = await captureExec({
+    cmd: ["bash"],
+    stdin: {
+      pipe: "echo >&2 'some stderr output'; printf '123'",
+    },
+    stderr: {
+      bufferLines: (line) => line,
+    },
+  });
+
+  assertEquals(result, {
+    out: "123",
+    err: "",
+  });
 });
 
 Deno.test("inheritExec ok", async () => {

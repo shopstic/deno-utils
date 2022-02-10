@@ -18,7 +18,10 @@ export class NonZeroExitError extends Error {
   constructor(
     message: string,
     public exitCode: number,
-    public output?: string,
+    public output?: {
+      out: string;
+      err: string;
+    },
   ) {
     super(message);
     this.name = "NonZeroExitError";
@@ -28,7 +31,10 @@ export class NonZeroExitError extends Error {
 export class AbortedError extends Error {
   constructor(
     message: string,
-    public output?: string,
+    public output?: {
+      out: string;
+      err: string;
+    },
   ) {
     super(message);
     this.name = "AbortedError";
@@ -216,7 +222,7 @@ export async function inheritExec(
 export async function captureExec(
   {
     stdin = { ignore: true },
-    stderr = { inherit: true },
+    stderr = { capture: true },
     abortSignal,
     ...run
   }:
@@ -224,14 +230,16 @@ export async function captureExec(
     & {
       abortSignal?: AbortSignal;
       stdin?: StdInputBehavior;
-      stderr?: StdOutputBehavior;
+      stderr?: StdOutputBehavior | {
+        capture: true;
+      };
     },
-): Promise<string> {
+): Promise<{ out: string; err: string }> {
   const child = Deno.run({
     ...run,
     stdin: createStdinOpt(stdin),
     stdout: "piped",
-    stderr: createStdoutOpt(stderr),
+    stderr: ("capture" in stderr) ? "piped" : createStdoutOpt(stderr),
   });
 
   const onAbort = () => {
@@ -265,6 +273,8 @@ export async function captureExec(
     const stderrPromise = (async () => {
       if ("ignore" in stderr || "inherit" in stderr) {
         return;
+      } else if ("capture" in stderr) {
+        return child.stderrOutput();
       } else {
         const tranformLine = stderr.bufferLines ?? stripAnsi;
 
@@ -281,17 +291,24 @@ export async function captureExec(
     await Promise.all([stdinPromise, stderrPromise]);
 
     const { code } = await child.status();
-    const captured = new TextDecoder().decode(await stdoutPromise);
+    const capturedStdout = new TextDecoder().decode(await stdoutPromise);
+    const capturedStderr = ("capture" in stderr)
+      ? new TextDecoder().decode(await stderrPromise)
+      : "";
+    const captured = {
+      out: capturedStdout,
+      err: capturedStderr,
+    };
 
     if (code !== 0) {
       throw new NonZeroExitError(
-        `Command return non-zero status of: ${code}. Captured stdout: ${captured}`,
+        `Command return non-zero status of: ${code}`,
         code,
         captured,
       );
     } else if (abortSignal?.aborted) {
       throw new AbortedError(
-        `Command execution was aborted. Captured stdout up to this point: ${captured}`,
+        `Command execution was aborted`,
         captured,
       );
     }
@@ -299,7 +316,9 @@ export async function captureExec(
     return captured;
   } finally {
     abortSignal?.removeEventListener("abort", onAbort);
-    child.stderr?.close();
+    if ("bufferLines" in stderr) {
+      child.stderr?.close();
+    }
     child.close();
   }
 }
