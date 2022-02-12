@@ -37,6 +37,7 @@ export function printErrLines(
 export class NonZeroExitError extends Error {
   constructor(
     message: string,
+    public command: Deno.RunOptions["cmd"],
     public exitCode: number,
     public output?: {
       out: string;
@@ -48,9 +49,10 @@ export class NonZeroExitError extends Error {
   }
 }
 
-export class AbortedError extends Error {
+export class ExecAbortedError extends Error {
   constructor(
     message: string,
+    public command: Deno.RunOptions["cmd"],
     public output?: {
       out: string;
       err: string;
@@ -212,6 +214,7 @@ export async function inheritExec(
   if (code !== 0) {
     throw new NonZeroExitError(
       `Command return non-zero status of: ${code}`,
+      args.cmd,
       code,
     );
   }
@@ -295,12 +298,14 @@ export async function captureExec(
     if (code !== 0) {
       throw new NonZeroExitError(
         `Command return non-zero status of: ${code}`,
+        run.cmd,
         code,
         captured,
       );
     } else if (abortSignal?.aborted) {
-      throw new AbortedError(
+      throw new ExecAbortedError(
         `Command execution was aborted`,
+        run.cmd,
         captured,
       );
     }
