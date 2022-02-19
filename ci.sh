@@ -2,8 +2,8 @@
 set -euo pipefail
 
 echo "Checking formatting..."
-deno fmt --unstable --check --ignore=.vscode
+deno fmt --check --ignore=.vscode
 echo "Linting..."
-deno lint --unstable
+deno lint
 echo "Runnning tests..."
 deno test -A

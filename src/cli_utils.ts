@@ -7,6 +7,7 @@ interface CliAction<T extends TProperties & { [key: string]: CustomOptions }> {
   action: (
     args: Static<TObject<T>>,
     unparsedArgs: string[],
+    abortSignal: AbortSignal,
   ) => Promise<ExitCode>;
   renderUsage?: (command: string, args: string[]) => string;
 }
@@ -15,7 +16,11 @@ export function createCliAction<
   T extends TProperties & { [key: string]: CustomOptions },
 >(
   argsSchema: TObject<T>,
-  action: (args: Static<TObject<T>>, unparsed: string[]) => Promise<ExitCode>,
+  action: (
+    args: Static<TObject<T>>,
+    unparsed: string[],
+    abortSignal: AbortSignal,
+  ) => Promise<ExitCode>,
   renderUsage?: (command: string, args: string[]) => string,
 ): CliAction<T> {
   return {
@@ -37,25 +42,37 @@ export class ExitCode {
   }
 }
 
-export function waitForSignal(signal: "SIGINT" | "SIGTERM"): Promise<void> {
-  return new Promise((resolve) => {
-    function listener() {
-      // deno-lint-ignore ban-ts-comment
-      // @ts-ignore
-      Deno.removeSignalListener(signal, listener);
+export function waitForSignal(
+  signal: "SIGINT" | "SIGTERM",
+  abortSignal: AbortSignal,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    function cleanUp() {
+      abortSignal.removeEventListener("abort", onAbort);
+      Deno.removeSignalListener(signal, onSignal);
+    }
+
+    function onAbort(error: unknown) {
+      cleanUp();
+      reject(error);
+    }
+
+    function onSignal() {
+      cleanUp();
       resolve(undefined);
     }
 
     // deno-lint-ignore ban-ts-comment
     // @ts-ignore
-    Deno.addSignalListener(signal, listener);
+    Deno.addSignalListener(signal, onSignal);
+    abortSignal.addEventListener("abort", onAbort);
   });
 }
 
-async function waitForExitSignal(): Promise<ExitCode> {
+async function waitForExitSignal(abortSignal: AbortSignal): Promise<ExitCode> {
   await Promise.race([
-    waitForSignal("SIGINT"),
-    waitForSignal("SIGTERM"),
+    waitForSignal("SIGINT", abortSignal),
+    waitForSignal("SIGTERM", abortSignal),
   ]);
 
   return new ExitCode(123);
@@ -224,10 +241,17 @@ ${actionHelp}`,
     });
 
     if (validationResult.isSuccess) {
-      const exitCode = await Promise.race([
-        action.action(validationResult.value, unparsedArgs),
-        waitForExitSignal(),
-      ]);
+      const abortController = new AbortController();
+      const exitCode = await Promise
+        .race([
+          action.action(
+            validationResult.value,
+            unparsedArgs,
+            abortController.signal,
+          ),
+          waitForExitSignal(abortController.signal),
+        ])
+        .finally(() => abortController.abort());
 
       this.onExit(exitCode);
     } else {
