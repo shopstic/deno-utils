@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertThrows } from "./deps/std_testing.ts";
-import { Type } from "./deps/typebox.ts";
+import { Static, Type } from "./deps/typebox.ts";
 import { validate, validateDefinition } from "./validation_utils.ts";
 
 const schema = Type.Object({
@@ -9,7 +9,7 @@ const schema = Type.Object({
 });
 
 Deno.test("validate success", () => {
-  const value = {
+  const value: Static<typeof schema> = {
     foo: "foo",
     bar: true,
     baz: "two",
