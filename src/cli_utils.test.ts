@@ -10,12 +10,16 @@ Deno.test({
         hostname: Type.Optional(Type.String({ minLength: 1 })),
         port: Type.Optional(Type.Number({ minimum: 0, maximum: 65535 })),
         proxyTarget: Type.String({ format: "uri" }),
+        maybeArray1: Type.Union([Type.Array(Type.String()), Type.String()]),
+        maybeArray2: Type.Union([Type.Array(Type.String()), Type.String()]),
       }),
       (
         {
           hostname,
           port,
           proxyTarget,
+          maybeArray1,
+          maybeArray2,
         },
         unparsedArgs,
       ) => {
@@ -23,6 +27,8 @@ Deno.test({
         assertEquals(port, 12345);
         assertEquals(proxyTarget, "http://foo.bar");
         assertEquals(unparsedArgs, ["some", "remaining", "args"]);
+        assertEquals(maybeArray1, "one");
+        assertEquals(maybeArray2, ["one", "two", "three"]);
 
         return Promise.resolve(ExitCode.Zero);
       },
@@ -40,6 +46,14 @@ Deno.test({
         "12345",
         "--proxyTarget",
         "http://foo.bar",
+        "--maybeArray1",
+        "one",
+        "--maybeArray2",
+        "one",
+        "--maybeArray2",
+        "two",
+        "--maybeArray2",
+        "three",
         "--",
         "some",
         "remaining",
