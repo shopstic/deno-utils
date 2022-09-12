@@ -251,6 +251,10 @@ ${actionHelp}`,
           ),
           waitForExitSignal(abortController.signal),
         ])
+        .catch((e) => {
+          console.error("Unhandled error", JSON.stringify(e, null, 2));
+          throw e;
+        })
         .finally(() => abortController.abort());
 
       this.onExit(exitCode);
