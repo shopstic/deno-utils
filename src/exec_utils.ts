@@ -34,6 +34,22 @@ export function printErrLines(
   };
 }
 
+export class DenoRunError extends Error {
+  public name: string;
+  public code?: string;
+
+  constructor(
+    error: Error,
+    public command: Deno.RunOptions["cmd"],
+  ) {
+    super(error.message);
+    this.name = error.name;
+    this.stack = error.stack;
+    // deno-lint-ignore no-explicit-any
+    this.code = ("code" in error) ? (error as any).code : undefined;
+  }
+}
+
 export class NonZeroExitError extends Error {
   constructor(
     message: string,
@@ -139,12 +155,18 @@ async function _inheritExec(
     return 143;
   }
 
-  const child = Deno.run({
-    ...run,
-    stdin: createStdinOpt(stdin),
-    stdout: createStdoutOpt(stdout),
-    stderr: createStdoutOpt(stderr),
-  });
+  const child = (() => {
+    try {
+      return Deno.run({
+        ...run,
+        stdin: createStdinOpt(stdin),
+        stdout: createStdoutOpt(stdout),
+        stderr: createStdoutOpt(stderr),
+      });
+    } catch (e) {
+      throw new DenoRunError(e, run.cmd);
+    }
+  })();
 
   const onAbort = () => {
     child.kill("SIGTERM");
@@ -236,12 +258,18 @@ export async function captureExec(
       };
     },
 ): Promise<{ out: string; err: string }> {
-  const child = Deno.run({
-    ...run,
-    stdin: createStdinOpt(stdin),
-    stdout: "piped",
-    stderr: ("capture" in stderr) ? "piped" : createStdoutOpt(stderr),
-  });
+  const child = (() => {
+    try {
+      return Deno.run({
+        ...run,
+        stdin: createStdinOpt(stdin),
+        stdout: "piped",
+        stderr: ("capture" in stderr) ? "piped" : createStdoutOpt(stderr),
+      });
+    } catch (e) {
+      throw new DenoRunError(e, run.cmd);
+    }
+  })();
 
   const onAbort = () => {
     child.kill("SIGTERM");
