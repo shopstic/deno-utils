@@ -44,8 +44,7 @@ export function createValidator<T extends TSchema>(
       return {
         isSuccess: false,
         errors: validate.errors!,
-        errorsToString: (options?: ErrorsTextOptions) =>
-          ajv.errorsText(validate.errors!, options),
+        errorsToString: (options?: ErrorsTextOptions) => ajv.errorsText(validate.errors!, options),
       };
     }
 
@@ -81,8 +80,7 @@ export function createDefinitionValidator<T>(
       return {
         isSuccess: false,
         errors: validate.errors!,
-        errorsToString: (options?: ErrorsTextOptions) =>
-          ajv.errorsText(validate.errors!, options),
+        errorsToString: (options?: ErrorsTextOptions) => ajv.errorsText(validate.errors!, options),
       };
     }
 

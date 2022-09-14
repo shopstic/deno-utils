@@ -1,64 +1,8 @@
-import type {
-  IoK8sApiAppsV1DaemonSet,
-  IoK8sApiAppsV1Deployment,
-  IoK8sApiAppsV1StatefulSet,
-  IoK8sApiBatchV1Job,
-  IoK8sApiCoreV1ConfigMap,
-  IoK8sApiCoreV1Container,
-  IoK8sApiCoreV1ContainerPort,
-  IoK8sApiCoreV1EnvVar,
-  IoK8sApiCoreV1Namespace,
-  IoK8sApiCoreV1PersistentVolume,
-  IoK8sApiCoreV1PersistentVolumeClaim,
-  IoK8sApiCoreV1Probe,
-  IoK8sApiCoreV1Secret,
-  IoK8sApiCoreV1Service,
-  IoK8sApiCoreV1ServiceAccount,
-  IoK8sApiCoreV1Volume,
-  IoK8sApiCoreV1VolumeMount,
-  IoK8sApiNetworkingV1Ingress,
-  IoK8sApiNetworkingV1IngressServiceBackend,
-  IoK8sApiRbacV1ClusterRole,
-  IoK8sApiRbacV1ClusterRoleBinding,
-  IoK8sApiRbacV1Role,
-  IoK8sApiRbacV1RoleBinding,
-  IoK8sApiStorageV1StorageClass,
-} from "./deps/k8s_api.ts";
+import type { K8s } from "./deps/k8s_api.ts";
+export type { K8s };
 
-import type { Static, TObject, TProperties } from "./deps/typebox.ts";
+import type { Static } from "./deps/typebox.ts";
 import { Type } from "./deps/typebox.ts";
-
-export type {
-  IoK8sApiAppsV1DaemonSet,
-  IoK8sApiAppsV1Deployment,
-  IoK8sApiAppsV1StatefulSet,
-  IoK8sApiBatchV1Job,
-  IoK8sApiCoreV1ConfigMap,
-  IoK8sApiCoreV1Container,
-  IoK8sApiCoreV1ContainerPort,
-  IoK8sApiCoreV1EnvVar,
-  IoK8sApiCoreV1Namespace,
-  IoK8sApiCoreV1PersistentVolume,
-  IoK8sApiCoreV1PersistentVolumeClaim,
-  IoK8sApiCoreV1Probe,
-  IoK8sApiCoreV1Secret,
-  IoK8sApiCoreV1Service,
-  IoK8sApiCoreV1ServiceAccount,
-  IoK8sApiCoreV1Volume,
-  IoK8sApiCoreV1VolumeMount,
-  IoK8sApiNetworkingV1Ingress,
-  IoK8sApiRbacV1ClusterRole,
-  IoK8sApiRbacV1ClusterRoleBinding,
-  IoK8sApiRbacV1Role,
-  IoK8sApiRbacV1RoleBinding,
-  IoK8sApiStorageV1StorageClass,
-};
-
-export function RelaxedObject<T extends TProperties>(
-  properties: T,
-): TObject<T> {
-  return Type.Object<T>(properties, { additionalProperties: true });
-}
 
 export type K8sPersistentVolumeAccessMode =
   | "ReadWriteOnce"
@@ -67,10 +11,10 @@ export type K8sPersistentVolumeAccessMode =
 
 export type K8sImagePullPolicy = "Always" | "Never" | "IfNotPresent";
 
-export const K8sResourceSchema = RelaxedObject({
+export const K8sResourceSchema = Type.PartialObject({
   apiVersion: Type.String(),
   kind: Type.String(),
-  metadata: RelaxedObject({
+  metadata: Type.PartialObject({
     name: Type.String(),
     namespace: Type.Optional(Type.String()),
     labels: Type.Optional(Type.Record(Type.String(), Type.String())),
@@ -105,21 +49,21 @@ export const K8sCrdKind = K8sKind.CustomResourceDefinition;
 export const K8sCrdApiVersionV1beta1 = "apiextensions.k8s.io/v1beta1";
 export const K8sCrdApiVersionV1 = "apiextensions.k8s.io/v1";
 
-export const K8sCrdV1beta1Schema = RelaxedObject({
+export const K8sCrdV1beta1Schema = Type.PartialObject({
   apiVersion: Type.Literal(K8sCrdApiVersionV1beta1),
   kind: Type.Literal(K8sCrdKind),
-  metadata: RelaxedObject({
+  metadata: Type.PartialObject({
     name: Type.String(),
   }),
-  spec: RelaxedObject({
+  spec: Type.PartialObject({
     group: Type.String(),
-    names: RelaxedObject({
+    names: Type.PartialObject({
       kind: Type.String(),
     }),
     version: Type.Optional(Type.String()),
-    versions: Type.Optional(Type.Array(RelaxedObject({
+    versions: Type.Optional(Type.Array(Type.PartialObject({
       name: Type.String(),
-      schema: Type.Optional(RelaxedObject({
+      schema: Type.Optional(Type.PartialObject({
         openAPIV3Schema: Type.Any(),
       })),
     }))),
@@ -127,20 +71,20 @@ export const K8sCrdV1beta1Schema = RelaxedObject({
   }),
 });
 
-export const K8sCrdV1Schema = RelaxedObject({
+export const K8sCrdV1Schema = Type.PartialObject({
   apiVersion: Type.Literal(K8sCrdApiVersionV1),
   kind: Type.Literal(K8sCrdKind),
-  metadata: RelaxedObject({
+  metadata: Type.PartialObject({
     name: Type.String(),
   }),
-  spec: RelaxedObject({
+  spec: Type.PartialObject({
     group: Type.String(),
-    names: RelaxedObject({
+    names: Type.PartialObject({
       kind: Type.String(),
     }),
-    versions: Type.Array(RelaxedObject({
+    versions: Type.Array(Type.PartialObject({
       name: Type.String(),
-      schema: RelaxedObject({
+      schema: Type.PartialObject({
         openAPIV3Schema: Type.Any(),
       }),
     })),
@@ -151,37 +95,37 @@ export const K8sCrdSchema = Type.Union([K8sCrdV1beta1Schema, K8sCrdV1Schema]);
 
 export type K8sResource = Static<typeof K8sResourceSchema>;
 export type K8sResourceMetadata = Pick<K8sResource, "metadata">;
-export type K8sNamespace = IoK8sApiCoreV1Namespace & K8sResource;
-export type K8sSecret = IoK8sApiCoreV1Secret & K8sResource;
-export type K8sConfigMap = IoK8sApiCoreV1ConfigMap & K8sResource;
-export type K8sVolumeMount = IoK8sApiCoreV1VolumeMount;
-export type K8sContainerPort = IoK8sApiCoreV1ContainerPort;
-export type K8sDaemonSet = IoK8sApiAppsV1DaemonSet & K8sResource;
-export type K8sDeployment = IoK8sApiAppsV1Deployment & K8sResource;
-export type K8sStatefulSet = IoK8sApiAppsV1StatefulSet & K8sResource;
-export type K8sJob = IoK8sApiBatchV1Job & K8sResource;
-export type K8sService = IoK8sApiCoreV1Service & K8sResource;
-export type K8sStorageClass = IoK8sApiStorageV1StorageClass & K8sResource;
-export type K8sIngress = IoK8sApiNetworkingV1Ingress & K8sResource;
-export type K8sPersistentVolume = IoK8sApiCoreV1PersistentVolume & K8sResource;
+export type K8sNamespace = K8s["core.v1.Namespace"] & K8sResource;
+export type K8sSecret = K8s["core.v1.Secret"] & K8sResource;
+export type K8sConfigMap = K8s["core.v1.ConfigMap"] & K8sResource;
+export type K8sVolumeMount = K8s["core.v1.VolumeMount"];
+export type K8sContainerPort = K8s["core.v1.ContainerPort"];
+export type K8sDaemonSet = K8s["apps.v1.DaemonSet"] & K8sResource;
+export type K8sDeployment = K8s["apps.v1.Deployment"] & K8sResource;
+export type K8sStatefulSet = K8s["apps.v1.StatefulSet"] & K8sResource;
+export type K8sJob = K8s["batch.v1.Job"] & K8sResource;
+export type K8sService = K8s["core.v1.Service"] & K8sResource;
+export type K8sStorageClass = K8s["storage.v1.StorageClass"] & K8sResource;
+export type K8sIngress = K8s["networking.v1.Ingress"] & K8sResource;
+export type K8sPersistentVolume = K8s["core.v1.PersistentVolume"] & K8sResource;
 export type K8sPv = K8sPersistentVolume;
 export type K8sPersistentVolumeClaim =
-  & IoK8sApiCoreV1PersistentVolumeClaim
+  & K8s["core.v1.PersistentVolumeClaim"]
   & K8sResource;
 export type K8sPvc = K8sPersistentVolumeClaim;
-export type K8sRole = IoK8sApiRbacV1Role & K8sResource;
-export type K8sRoleBinding = IoK8sApiRbacV1RoleBinding & K8sResource;
-export type K8sClusterRole = IoK8sApiRbacV1ClusterRole & K8sResource;
+export type K8sRole = K8s["rbac.v1.Role"] & K8sResource;
+export type K8sRoleBinding = K8s["rbac.v1.RoleBinding"] & K8sResource;
+export type K8sClusterRole = K8s["rbac.v1.ClusterRole"] & K8sResource;
 export type K8sClusterRoleBinding =
-  & IoK8sApiRbacV1ClusterRoleBinding
+  & K8s["rbac.v1.ClusterRoleBinding"]
   & K8sResource;
-export type K8sServiceAccount = IoK8sApiCoreV1ServiceAccount & K8sResource;
-export type K8sContainer = IoK8sApiCoreV1Container;
-export type K8sEnvVar = IoK8sApiCoreV1EnvVar;
-export type K8sProbe = IoK8sApiCoreV1Probe;
+export type K8sServiceAccount = K8s["core.v1.ServiceAccount"] & K8sResource;
+export type K8sContainer = K8s["core.v1.Container"];
+export type K8sEnvVar = K8s["core.v1.EnvVar"];
+export type K8sProbe = K8s["core.v1.Probe"];
 
 export function createK8sNamespace(
-  ns: IoK8sApiCoreV1Namespace & K8sResourceMetadata,
+  ns: K8s["core.v1.Namespace"] & K8sResourceMetadata,
 ): K8sNamespace {
   return {
     apiVersion: "v1",
@@ -191,7 +135,7 @@ export function createK8sNamespace(
 }
 
 export function createK8sSecret(
-  secret: IoK8sApiCoreV1Secret & K8sResourceMetadata,
+  secret: K8s["core.v1.Secret"] & K8sResourceMetadata,
 ): K8sSecret {
   return {
     apiVersion: "v1",
@@ -201,7 +145,7 @@ export function createK8sSecret(
 }
 
 export function createK8sConfigMap(
-  configMap: IoK8sApiCoreV1ConfigMap & K8sResourceMetadata,
+  configMap: K8s["core.v1.ConfigMap"] & K8sResourceMetadata,
 ): K8sConfigMap {
   return {
     apiVersion: "v1",
@@ -211,25 +155,25 @@ export function createK8sConfigMap(
 }
 
 export function createK8sVolume(
-  volume: IoK8sApiCoreV1Volume,
+  volume: K8s["core.v1.Volume"],
 ): typeof volume {
   return volume;
 }
 
 export function createK8sVolumeMount(
-  mount: IoK8sApiCoreV1VolumeMount,
+  mount: K8s["core.v1.VolumeMount"],
 ): K8sVolumeMount {
   return mount;
 }
 
 export function createK8sContainerPort(
-  port: IoK8sApiCoreV1ContainerPort,
+  port: K8s["core.v1.ContainerPort"],
 ): K8sContainerPort {
   return port;
 }
 
 export function createK8sDaemonSet(
-  daemonSet: IoK8sApiAppsV1DaemonSet & K8sResourceMetadata,
+  daemonSet: K8s["apps.v1.DaemonSet"] & K8sResourceMetadata,
 ): K8sDaemonSet {
   return {
     apiVersion: "apps/v1",
@@ -239,7 +183,7 @@ export function createK8sDaemonSet(
 }
 
 export function createK8sDeployment(
-  deployment: IoK8sApiAppsV1Deployment & K8sResourceMetadata,
+  deployment: K8s["apps.v1.Deployment"] & K8sResourceMetadata,
 ): K8sDeployment {
   return {
     apiVersion: "apps/v1",
@@ -249,7 +193,7 @@ export function createK8sDeployment(
 }
 
 export function createK8sStatefulSet(
-  statefulSet: IoK8sApiAppsV1StatefulSet & K8sResourceMetadata,
+  statefulSet: K8s["apps.v1.StatefulSet"] & K8sResourceMetadata,
 ): K8sStatefulSet {
   return {
     apiVersion: "apps/v1",
@@ -259,7 +203,7 @@ export function createK8sStatefulSet(
 }
 
 export function createK8sJob(
-  job: IoK8sApiBatchV1Job & K8sResourceMetadata,
+  job: K8s["batch.v1.Job"] & K8sResourceMetadata,
 ): K8sJob {
   return {
     apiVersion: "batch/v1",
@@ -270,7 +214,7 @@ export function createK8sJob(
 
 export function createK8sService(
   service:
-    & IoK8sApiCoreV1Service
+    & K8s["core.v1.Service"]
     & K8sResourceMetadata,
 ): K8sService {
   return {
@@ -282,9 +226,9 @@ export function createK8sService(
 
 export function createK8sStorageClass(
   storageClass:
-    & IoK8sApiStorageV1StorageClass
+    & K8s["storage.v1.StorageClass"]
     & K8sResourceMetadata
-    & Pick<IoK8sApiStorageV1StorageClass, "provisioner">,
+    & Pick<K8s["storage.v1.StorageClass"], "provisioner">,
 ): K8sStorageClass {
   return {
     apiVersion: "storage.k8s.io/v1",
@@ -294,7 +238,7 @@ export function createK8sStorageClass(
 }
 
 export function createK8sIngress(
-  ingress: IoK8sApiNetworkingV1Ingress & K8sResourceMetadata,
+  ingress: K8s["networking.v1.Ingress"] & K8sResourceMetadata,
 ): K8sIngress {
   return {
     apiVersion: "networking.k8s.io/v1",
@@ -318,7 +262,7 @@ export function createK8sNginxIngress(
     hostname: string;
     servicePath: string;
     servicePathType: "Prefix" | "Exact";
-    serviceBackend: IoK8sApiNetworkingV1IngressServiceBackend;
+    serviceBackend: K8s["networking.v1.IngressServiceBackend"];
     protocol?: "HTTP" | "GRPC";
     sslRedirect?: boolean;
     tlsSecretName?: string;
@@ -368,7 +312,7 @@ export function createK8sNginxIngress(
 }
 
 export function createK8sPv(
-  pv: IoK8sApiCoreV1PersistentVolume & K8sResourceMetadata,
+  pv: K8s["core.v1.PersistentVolume"] & K8sResourceMetadata,
 ): K8sPv {
   return {
     apiVersion: "v1",
@@ -378,7 +322,7 @@ export function createK8sPv(
 }
 
 export function createK8sPvc(
-  pvc: IoK8sApiCoreV1PersistentVolumeClaim & K8sResourceMetadata,
+  pvc: K8s["core.v1.PersistentVolumeClaim"] & K8sResourceMetadata,
 ): K8sPvc {
   return {
     apiVersion: "v1",
@@ -485,7 +429,7 @@ export function createK8sCephStaticPvc(
 }
 
 export function createK8sRole(
-  role: IoK8sApiRbacV1Role & K8sResourceMetadata,
+  role: K8s["rbac.v1.Role"] & K8sResourceMetadata,
 ): K8sRole {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
@@ -495,7 +439,7 @@ export function createK8sRole(
 }
 
 export function createK8sRoleBinding(
-  roleBinding: IoK8sApiRbacV1RoleBinding & K8sResourceMetadata,
+  roleBinding: K8s["rbac.v1.RoleBinding"] & K8sResourceMetadata,
 ): K8sRoleBinding {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
@@ -505,8 +449,8 @@ export function createK8sRoleBinding(
 }
 
 export function createK8sClusterRole(
-  clusterRole: IoK8sApiRbacV1ClusterRole & K8sResourceMetadata,
-): IoK8sApiRbacV1ClusterRole & K8sResource {
+  clusterRole: K8s["rbac.v1.ClusterRole"] & K8sResourceMetadata,
+): K8sClusterRole {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
     kind: K8sKind.ClusterRole,
@@ -515,7 +459,7 @@ export function createK8sClusterRole(
 }
 
 export function createK8sClusterRoleBinding(
-  clusterRoleBinding: IoK8sApiRbacV1ClusterRoleBinding & K8sResourceMetadata,
+  clusterRoleBinding: K8s["rbac.v1.ClusterRoleBinding"] & K8sResourceMetadata,
 ): K8sClusterRoleBinding {
   return {
     apiVersion: "rbac.authorization.k8s.io/v1",
@@ -525,7 +469,7 @@ export function createK8sClusterRoleBinding(
 }
 
 export function createK8sServiceAccount(
-  account: IoK8sApiCoreV1ServiceAccount & K8sResourceMetadata,
+  account: K8s["core.v1.ServiceAccount"] & K8sResourceMetadata,
 ): K8sServiceAccount {
   return {
     apiVersion: "v1",
@@ -535,19 +479,19 @@ export function createK8sServiceAccount(
 }
 
 export function createK8sContainer(
-  container: IoK8sApiCoreV1Container,
+  container: K8s["core.v1.Container"],
 ): K8sContainer {
   return container;
 }
 
 export function createK8sEnvVar(
-  env: IoK8sApiCoreV1EnvVar,
+  env: K8s["core.v1.EnvVar"],
 ): K8sEnvVar {
   return env;
 }
 
 export function createK8sProbe(
-  probe: IoK8sApiCoreV1Probe,
+  probe: K8s["core.v1.Probe"],
 ): K8sProbe {
   return probe;
 }

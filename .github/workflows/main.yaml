@@ -19,4 +19,7 @@ jobs:
         run: nix build -L -v --no-link
 
       - name: Test
-        run: nix develop -v -c ./ci.sh
+        shell: nix develop -v -c bash {0}
+        run: |
+          ./cli.sh code_quality
+          ./cli.sh run_tests

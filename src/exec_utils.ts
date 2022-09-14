@@ -196,13 +196,9 @@ async function _inheritExec(
       }
     })();
 
-    const stdoutPromise = ("ignore" in stdout || "inherit" in stdout)
-      ? Promise.resolve()
-      : stdout.read(child.stdout!);
+    const stdoutPromise = ("ignore" in stdout || "inherit" in stdout) ? Promise.resolve() : stdout.read(child.stdout!);
 
-    const stderrPromise = ("ignore" in stderr || "inherit" in stderr)
-      ? Promise.resolve()
-      : stderr.read(child.stderr!);
+    const stderrPromise = ("ignore" in stderr || "inherit" in stderr) ? Promise.resolve() : stderr.read(child.stderr!);
 
     await Promise.all([
       stdinPromise,
@@ -315,9 +311,7 @@ export async function captureExec(
 
     const { code } = await child.status();
     const capturedStdout = new TextDecoder().decode(await stdoutPromise);
-    const capturedStderr = ("capture" in stderr)
-      ? new TextDecoder().decode(await stderrPromise)
-      : "";
+    const capturedStderr = ("capture" in stderr) ? new TextDecoder().decode(await stderrPromise) : "";
     const captured = {
       out: capturedStdout,
       err: capturedStderr,

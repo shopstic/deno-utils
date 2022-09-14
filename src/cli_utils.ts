@@ -153,11 +153,9 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     const renderProps = props.map(([name, prop]) => {
       const required = requiredArgSet.has(name);
       const defaultValue = JSON.stringify(prop.default);
-      const argument = (prop.default !== undefined)
-        ? `--${name}=${defaultValue}`
-        : (
-          required ? `--${name}` : `[--${name}]`
-        );
+      const argument = (prop.default !== undefined) ? `--${name}=${defaultValue}` : (
+        required ? `--${name}` : `[--${name}]`
+      );
 
       return {
         name,
@@ -186,9 +184,7 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
 
     const actionHelp = renderProps
       .map(({ argument, typeName, description }) => {
-        return `    ${argument.padEnd(maxArgumentLength)} ${
-          typeName.padEnd(maxTypeNameLength)
-        } ${description}`;
+        return `    ${argument.padEnd(maxArgumentLength)} ${typeName.padEnd(maxTypeNameLength)} ${description}`;
       })
       .join("\n");
 
@@ -213,9 +209,7 @@ ${actionHelp}`,
     });
 
     const { _, ...args } = parsed;
-    const unparsedArgs: string[] = (Array.isArray(parsed["--"]))
-      ? parsed["--"]
-      : [];
+    const unparsedArgs: string[] = (Array.isArray(parsed["--"])) ? parsed["--"] : [];
 
     if (_.length !== 1) {
       if (_.length === 0) {
