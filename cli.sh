@@ -17,12 +17,12 @@ auto_fmt() {
 
 update_cache() {
   echo "Updating cache"
-  deno cache ./src/**.ts "$@"
+  deno cache ./src/**/**.ts "$@"
   echo "All good!"
 }
 
 update_lock() {
-  "$0" update_cache --lock ./lock.json --lock-write
+  "$0" update_cache --lock-write
 }
 
 run_tests() {

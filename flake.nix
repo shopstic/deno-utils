@@ -27,6 +27,7 @@
             "[typescript]" = {
               "editor.defaultFormatter" = "denoland.vscode-deno";
               "editor.formatOnSave" = true;
+              "editor.inlayHints.enabled" = "offUnlessPressed";
             };
             "nix.enableLanguageServer" = true;
             "nix.formatterPath" = pkgs.nixpkgs-fmt + "/bin/nixpkgs-fmt";
