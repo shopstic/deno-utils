@@ -32,6 +32,7 @@ export enum K8sKind {
   ConfigMap = "ConfigMap",
   DaemonSet = "DaemonSet",
   Deployment = "Deployment",
+  PodDisruptionBudget = "PodDisruptionBudget",
   StatefulSet = "StatefulSet",
   Job = "Job",
   StorageClass = "StorageClass",
@@ -101,6 +102,7 @@ export type K8sConfigMap = K8s["core.v1.ConfigMap"] & K8sResource;
 export type K8sVolumeMount = K8s["core.v1.VolumeMount"];
 export type K8sContainerPort = K8s["core.v1.ContainerPort"];
 export type K8sDaemonSet = K8s["apps.v1.DaemonSet"] & K8sResource;
+export type K8sPodDisruptionBudget = K8s["policy.v1.PodDisruptionBudget"] & K8sResource;
 export type K8sDeployment = K8s["apps.v1.Deployment"] & K8sResource;
 export type K8sStatefulSet = K8s["apps.v1.StatefulSet"] & K8sResource;
 export type K8sJob = K8s["batch.v1.Job"] & K8sResource;
@@ -182,6 +184,15 @@ export function createK8sDaemonSet(
   };
 }
 
+export function createK8sPodDisruptionBudget(
+  budget: K8s["policy.v1.PodDisruptionBudget"] & K8sResourceMetadata,
+): K8sPodDisruptionBudget {
+  return {
+    apiVersion: "policy/v1",
+    kind: K8sKind.PodDisruptionBudget,
+    ...budget,
+  };
+}
 export function createK8sDeployment(
   deployment: K8s["apps.v1.Deployment"] & K8sResourceMetadata,
 ): K8sDeployment {
