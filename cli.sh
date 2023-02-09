@@ -22,6 +22,7 @@ update_cache() {
 }
 
 update_lock() {
+  rm -f deno.lock
   "$0" update_cache --lock-write
 }
 

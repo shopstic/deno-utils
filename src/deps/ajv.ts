@@ -1,11 +1,5 @@
-// @deno-types="https://cdn.shopstic.com/pin/ajv@v8.6.2-hTXOSR89efxJTuZb2Htb/dist=es2020,mode=types/index.d.ts"
-import Ajv, {
-  ErrorObject,
-  ErrorsTextOptions,
-  Options,
-} from "https://cdn.shopstic.com/pin/ajv@v8.6.2-hTXOSR89efxJTuZb2Htb/dist=es2020,mode=imports/optimized/ajv.js";
-// @deno-types="https://cdn.shopstic.com/pin/ajv-formats@v2.1.1-vcFtNZ2SctUV93FmiL2Q/dist=es2020,mode=types/dist/index.d.ts"
-import addFormats from "https://cdn.shopstic.com/pin/ajv-formats@v2.1.1-vcFtNZ2SctUV93FmiL2Q/dist=es2020,mode=imports/optimized/ajv-formats.js";
+import Ajv, { ErrorObject, ErrorsTextOptions, Options } from "https://esm.sh/ajv@8.12.0?pin=v106";
+import addFormats from "https://esm.sh/ajv-formats@2.1.1?pin=v106";
 
 export { addFormats, Ajv };
 export type { ErrorObject, ErrorsTextOptions, Options };

@@ -35,7 +35,8 @@ export function createValidator<T extends TSchema>(
   const ajv = new Ajv(options);
   ajv.addKeyword("kind");
   ajv.addKeyword("modifier");
-  addFormats(ajv);
+  // deno-lint-ignore no-explicit-any
+  addFormats(ajv as unknown as any);
 
   const validate = ajv.compile(schema);
 
@@ -65,7 +66,8 @@ export function createDefinitionValidator<T>(
   const ajv = new Ajv(options);
   ajv.addKeyword("kind");
   ajv.addKeyword("modifier");
-  addFormats(ajv);
+  // deno-lint-ignore no-explicit-any
+  addFormats(ajv as unknown as any);
 
   ajv.addSchema(schema);
 
