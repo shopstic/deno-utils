@@ -1,2 +1,2 @@
-export { deferred } from "https://deno.land/std@0.177.0/async/deferred.ts";
-export { delay } from "https://deno.land/std@0.177.0/async/delay.ts";
+export { deferred } from "https://deno.land/std@0.181.0/async/deferred.ts";
+export { delay } from "https://deno.land/std@0.181.0/async/delay.ts";

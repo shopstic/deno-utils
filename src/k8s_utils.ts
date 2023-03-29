@@ -35,6 +35,7 @@ export enum K8sKind {
   PodDisruptionBudget = "PodDisruptionBudget",
   StatefulSet = "StatefulSet",
   Job = "Job",
+  CronJob = "CronJob",
   StorageClass = "StorageClass",
   Ingress = "Ingress",
   PersistentVolume = "PersistentVolume",
@@ -106,6 +107,7 @@ export type K8sPodDisruptionBudget = K8s["policy.v1.PodDisruptionBudget"] & K8sR
 export type K8sDeployment = K8s["apps.v1.Deployment"] & K8sResource;
 export type K8sStatefulSet = K8s["apps.v1.StatefulSet"] & K8sResource;
 export type K8sJob = K8s["batch.v1.Job"] & K8sResource;
+export type K8sCronJob = K8s["batch.v1.CronJob"] & K8sResource;
 export type K8sService = K8s["core.v1.Service"] & K8sResource;
 export type K8sStorageClass = K8s["storage.v1.StorageClass"] & K8sResource;
 export type K8sIngress = K8s["networking.v1.Ingress"] & K8sResource;
@@ -219,6 +221,16 @@ export function createK8sJob(
   return {
     apiVersion: "batch/v1",
     kind: K8sKind.Job,
+    ...job,
+  };
+}
+
+export function createK8sCronJob(
+  job: K8s["batch.v1.CronJob"] & K8sResourceMetadata,
+): K8sCronJob {
+  return {
+    apiVersion: "batch/v1",
+    kind: K8sKind.CronJob,
     ...job,
   };
 }
