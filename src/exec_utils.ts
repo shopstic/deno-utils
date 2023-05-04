@@ -1,6 +1,5 @@
 import { copy, readAll, readLines, writeAll } from "./deps/std_io.ts";
 import { readerFromStreamReader, writerFromStreamWriter } from "./deps/std_streams.ts";
-import { assert } from "./deps/std_testing.ts";
 
 const ansiPattern = [
   "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
@@ -156,7 +155,9 @@ async function _inheritExec(
     stderr?: StdOutputBehavior;
   },
 ): Promise<number> {
-  assert(cmd.length > 0, "cmd must not be empty");
+  if (cmd.length === 0) {
+    throw new Error("cmd must not be empty");
+  }
 
   const abortSignal = signal ?? run.abortSignal;
 
@@ -260,7 +261,9 @@ export async function captureExec(
     };
   },
 ): Promise<{ out: string; err: string }> {
-  assert(cmd.length > 0, "cmd must not be empty");
+  if (cmd.length === 0) {
+    throw new Error("cmd must not be empty");
+  }
 
   const abortSignal = signal ?? run.abortSignal;
 
