@@ -1,19 +1,13 @@
 {
   "fmt": {
-    "options": {
-      "lineWidth": 120
-    },
-    "files": {
-      "include": [
-        "./src"
-      ]
-    }
+    "lineWidth": 120,
+    "include": [
+      "./src"
+    ]
   },
   "lint": {
-    "files": {
-      "include": [
-        "./src"
-      ]
-    }
+    "include": [
+      "./src"
+    ]
   }
 }

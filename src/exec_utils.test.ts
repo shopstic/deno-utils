@@ -1,4 +1,3 @@
-import { iterateReader } from "./deps/std_io.ts";
 import { assertEquals, assertRejects } from "./deps/std_testing.ts";
 import { captureExec, inheritExec, printOutLines } from "./exec_utils.ts";
 
@@ -40,11 +39,12 @@ Deno.test("captureExec with stderr reader", async () => {
       pipe: "echo >&2 'some stderr output'; printf '123'",
     },
     stderr: {
-      async read(reader) {
-        for await (const chunk of iterateReader(reader)) {
-          console.error(new TextDecoder().decode(chunk));
+      async read(readable) {
+        const decoder = new TextDecoder();
+        for await (const chunk of readable) {
+          console.error(decoder.decode(chunk));
         }
-        reader.close();
+        await readable.cancel();
       },
     },
   });
@@ -89,7 +89,7 @@ Deno.test("captureExec abort after a timeout", async () => {
     stderr: {
       inherit: true,
     },
-    abortSignal: abortController.signal,
+    signal: abortController.signal,
   });
 
   setTimeout(() => {
@@ -113,7 +113,7 @@ Deno.test("inheritExec abort after a timeout", async () => {
     stderr: {
       inherit: true,
     },
-    abortSignal: abortController.signal,
+    signal: abortController.signal,
   });
 
   setTimeout(() => {
@@ -134,7 +134,7 @@ Deno.test("inheritExec abort before running", async () => {
         "-c",
         "trap exit TERM; while true; do echo 'still running...'; sleep .5; done",
       ],
-      abortSignal: abortController.signal,
+      signal: abortController.signal,
     })
   );
 });

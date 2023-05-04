@@ -1,4 +1,6 @@
-import { copy, readLines, writeAll } from "./deps/std_io.ts";
+import { copy, readAll, readLines, writeAll } from "./deps/std_io.ts";
+import { readerFromStreamReader, writerFromStreamWriter } from "./deps/std_streams.ts";
+import { assert } from "./deps/std_testing.ts";
 
 const ansiPattern = [
   "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
@@ -17,8 +19,8 @@ export function stripAnsi(s: string): string {
 export function printOutLines(
   mapper: (line: string) => string = (line) => line,
 ) {
-  return async function (reader: Deno.Reader & Deno.Closer) {
-    for await (const line of readLines(reader)) {
+  return async function (readable: ReadableStream<Uint8Array>) {
+    for await (const line of readLines(readerFromStreamReader(readable.getReader()))) {
       console.log(mapper(line));
     }
   };
@@ -27,8 +29,8 @@ export function printOutLines(
 export function printErrLines(
   mapper: (line: string) => string = (line) => line,
 ) {
-  return async function (reader: Deno.Reader & Deno.Closer) {
-    for await (const line of readLines(reader)) {
+  return async function (readable: ReadableStream<Uint8Array>) {
+    for await (const line of readLines(readerFromStreamReader(readable.getReader()))) {
       console.error(mapper(line));
     }
   };
@@ -80,7 +82,7 @@ export class ExecAbortedError extends Error {
 }
 
 export type StdOutputBehavior = {
-  read: (reader: Deno.Reader & Deno.Closer) => Promise<void>;
+  read: (reader: ReadableStream<Uint8Array>) => Promise<void>;
 } | {
   inherit: true;
 } | {
@@ -137,68 +139,71 @@ function createStdinOpt(
 
 async function _inheritExec(
   {
-    abortSignal,
+    cmd,
+    signal,
     stdin = {
       ignore: true,
     },
     stdout = { inherit: true },
     stderr = { inherit: true },
     ...run
-  }: Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin"> & {
+  }: Omit<Deno.CommandOptions, "stdout" | "stderr" | "stdin" | "args"> & {
+    cmd: string[];
+    /** @deprecated Use signal instead. */
     abortSignal?: AbortSignal;
     stdin?: StdInputBehavior;
     stdout?: StdOutputBehavior;
     stderr?: StdOutputBehavior;
   },
 ): Promise<number> {
+  assert(cmd.length > 0, "cmd must not be empty");
+
+  const abortSignal = signal ?? run.abortSignal;
+
   if (abortSignal?.aborted) {
     return 143;
   }
 
   const child = (() => {
     try {
-      return Deno.run({
+      return new Deno.Command(cmd[0], {
         ...run,
+        signal: abortSignal,
+        args: cmd.slice(1),
         stdin: createStdinOpt(stdin),
         stdout: createStdoutOpt(stdout),
         stderr: createStdoutOpt(stderr),
-      });
+      }).spawn();
     } catch (e) {
-      throw new DenoRunError(e, run.cmd);
+      throw new DenoRunError(e, cmd);
     }
   })();
 
-  const onAbort = () => {
-    child.kill("SIGTERM");
-  };
-
   try {
-    if (abortSignal) {
-      if (abortSignal.aborted) {
-        onAbort();
-      } else {
-        abortSignal.addEventListener("abort", onAbort);
-      }
-    }
-
     const stdinPromise = (() => {
       if ("ignore" in stdin || "inherit" in stdin) {
         return Promise.resolve();
       } else {
-        if (typeof stdin.pipe === "string") {
-          return writeAll(child.stdin!, new TextEncoder().encode(stdin.pipe))
-            .finally(() => child.stdin!.close());
-        } else {
-          return copy(stdin.pipe, child.stdin!)
-            .then(() => {})
-            .finally(() => child.stdin!.close());
-        }
+        return (async () => {
+          const stdinWriter = child.stdin.getWriter();
+
+          try {
+            if (typeof stdin.pipe === "string") {
+              await writeAll(writerFromStreamWriter(stdinWriter), new TextEncoder().encode(stdin.pipe));
+            } else {
+              await copy(stdin.pipe, writerFromStreamWriter(stdinWriter));
+            }
+          } finally {
+            stdinWriter.releaseLock();
+            await child.stdin.close();
+          }
+        })();
       }
     })();
 
-    const stdoutPromise = ("ignore" in stdout || "inherit" in stdout) ? Promise.resolve() : stdout.read(child.stdout!);
+    const stdoutPromise = ("ignore" in stdout || "inherit" in stdout) ? Promise.resolve() : stdout.read(child.stdout);
 
-    const stderrPromise = ("ignore" in stderr || "inherit" in stderr) ? Promise.resolve() : stderr.read(child.stderr!);
+    const stderrPromise = ("ignore" in stderr || "inherit" in stderr) ? Promise.resolve() : stderr.read(child.stderr);
 
     await Promise.all([
       stdinPromise,
@@ -206,15 +211,15 @@ async function _inheritExec(
       stderrPromise,
     ]);
 
-    const { code } = await child.status();
+    const { code } = await child.status;
 
     return code;
   } finally {
-    abortSignal?.removeEventListener("abort", onAbort);
-
-    child.stdout?.close();
-    child.stderr?.close();
-    child.close();
+    try {
+      child.kill();
+    } catch (_) {
+      // Ignore
+    }
   }
 }
 
@@ -242,56 +247,66 @@ export async function captureExec(
   {
     stdin = { ignore: true },
     stderr = { capture: true },
-    abortSignal,
+    signal,
+    cmd,
     ...run
-  }:
-    & Omit<Deno.RunOptions, "stdout" | "stderr" | "stdin">
-    & {
-      abortSignal?: AbortSignal;
-      stdin?: StdInputBehavior;
-      stderr?: StdOutputBehavior | {
-        capture: true;
-      };
-    },
+  }: Omit<Deno.CommandOptions, "stdout" | "stderr" | "stdin" | "args"> & {
+    cmd: string[];
+    /** @deprecated Use signal instead. */
+    abortSignal?: AbortSignal;
+    stdin?: StdInputBehavior;
+    stderr?: StdOutputBehavior | {
+      capture: true;
+    };
+  },
 ): Promise<{ out: string; err: string }> {
+  assert(cmd.length > 0, "cmd must not be empty");
+
+  const abortSignal = signal ?? run.abortSignal;
+
+  if (abortSignal?.aborted) {
+    return Promise.reject(
+      new ExecAbortedError(
+        `Command execution was aborted`,
+        cmd,
+      ),
+    );
+  }
+
   const child = (() => {
     try {
-      return Deno.run({
+      return new Deno.Command(cmd[0], {
         ...run,
+        signal: abortSignal,
+        args: cmd.slice(1),
         stdin: createStdinOpt(stdin),
         stdout: "piped",
         stderr: ("capture" in stderr) ? "piped" : createStdoutOpt(stderr),
-      });
+      }).spawn();
     } catch (e) {
-      throw new DenoRunError(e, run.cmd);
+      throw new DenoRunError(e, cmd);
     }
   })();
 
-  const onAbort = () => {
-    child.kill("SIGTERM");
-  };
-
   try {
-    if (abortSignal) {
-      if (abortSignal.aborted) {
-        onAbort();
-      } else {
-        abortSignal.addEventListener("abort", onAbort);
-      }
-    }
-
     const stdinPromise = (() => {
       if ("ignore" in stdin || "inherit" in stdin) {
         return Promise.resolve();
       } else {
-        if (typeof stdin.pipe === "string") {
-          return writeAll(child.stdin!, new TextEncoder().encode(stdin.pipe))
-            .finally(() => child.stdin!.close());
-        } else {
-          return copy(stdin.pipe, child.stdin!)
-            .then(() => {})
-            .finally(() => child.stdin!.close());
-        }
+        return (async () => {
+          const stdinWriter = child.stdin.getWriter();
+
+          try {
+            if (typeof stdin.pipe === "string") {
+              await writeAll(writerFromStreamWriter(stdinWriter), new TextEncoder().encode(stdin.pipe));
+            } else {
+              await copy(stdin.pipe, writerFromStreamWriter(stdinWriter));
+            }
+          } finally {
+            stdinWriter.releaseLock();
+            await child.stdin.close();
+          }
+        })();
       }
     })();
 
@@ -299,17 +314,17 @@ export async function captureExec(
       if ("ignore" in stderr || "inherit" in stderr) {
         return;
       } else if ("capture" in stderr) {
-        return child.stderrOutput();
+        return readAll(readerFromStreamReader(child.stderr.getReader()));
       } else {
-        await stderr.read(child.stderr!);
+        await stderr.read(child.stderr);
         return;
       }
     })();
 
-    const stdoutPromise = child.output();
+    const stdoutPromise = readAll(readerFromStreamReader(child.stdout.getReader()));
     await Promise.all([stdinPromise, stderrPromise]);
 
-    const { code } = await child.status();
+    const { code } = await child.status;
     const capturedStdout = new TextDecoder().decode(await stdoutPromise);
     const capturedStderr = ("capture" in stderr) ? new TextDecoder().decode(await stderrPromise) : "";
     const captured = {
@@ -320,24 +335,24 @@ export async function captureExec(
     if (code !== 0) {
       throw new NonZeroExitError(
         `Command return non-zero status of: ${code}`,
-        run.cmd,
+        cmd,
         code,
         captured,
       );
     } else if (abortSignal?.aborted) {
       throw new ExecAbortedError(
         `Command execution was aborted`,
-        run.cmd,
+        cmd,
         captured,
       );
     }
 
     return captured;
   } finally {
-    abortSignal?.removeEventListener("abort", onAbort);
-    if ("bufferLines" in stderr) {
-      child.stderr?.close();
+    try {
+      child.kill();
+    } catch (_) {
+      // Ignore
     }
-    child.close();
   }
 }
