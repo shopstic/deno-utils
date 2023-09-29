@@ -1,6 +1,7 @@
 export * from "https://deno.land/x/typebox_deno@0.31.17-2/src/typebox.ts";
 export * from "https://deno.land/x/typebox_deno@0.31.17-2/src/compiler/index.ts";
 export { Value } from "https://deno.land/x/typebox_deno@0.31.17-2/src/value/index.ts";
+export { TransformDecodeCheckError } from "https://deno.land/x/typebox_deno@0.31.17-2/src/value/transform.ts";
 import {
   FormatRegistry,
   ObjectOptions,
