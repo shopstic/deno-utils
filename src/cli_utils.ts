@@ -1,9 +1,10 @@
+import { groupBy } from "./deps/std_collections.ts";
 import { parseCliArgs } from "./deps/std_flags.ts";
-import { CustomOptions, Static, TObject, TProperties } from "./deps/typebox.ts";
-import { validate } from "./validation_utils.ts";
+import { Static, TObject, TProperties, TSchema, TypeCheck, TypeCompiler, TypeGuard } from "./deps/typebox.ts";
 
-interface CliAction<T extends TProperties & { [key: string]: CustomOptions }> {
+interface CliAction<T extends TProperties> {
   argsSchema: TObject<T>;
+  argsCheck: TypeCheck<TObject<T>>;
   action: (
     args: Static<TObject<T>>,
     unparsedArgs: string[],
@@ -13,7 +14,7 @@ interface CliAction<T extends TProperties & { [key: string]: CustomOptions }> {
 }
 
 export function createCliAction<
-  T extends TProperties & { [key: string]: CustomOptions },
+  T extends TProperties,
 >(
   argsSchema: TObject<T>,
   action: (
@@ -25,6 +26,7 @@ export function createCliAction<
 ): CliAction<T> {
   return {
     argsSchema,
+    argsCheck: TypeCompiler.Compile(argsSchema),
     action,
     renderUsage,
   };
@@ -78,30 +80,30 @@ async function waitForExitSignal(abortSignal: AbortSignal): Promise<ExitCode> {
   return new ExitCode(123);
 }
 
-function jsonSchemaToTypeName(schema: CustomOptions): string {
-  if (schema.const !== undefined) {
+function jsonSchemaToTypeName(schema: TSchema): string {
+  if (schema.const) {
     return JSON.stringify(schema.const);
   }
 
-  if (schema.anyOf !== undefined) {
-    // deno-lint-ignore no-explicit-any
-    return schema.anyOf.map((t: any) => jsonSchemaToTypeName(t)).join(" | ");
+  if (TypeGuard.TUnion(schema)) {
+    return schema.anyOf.map((t) => jsonSchemaToTypeName(t)).join(" | ");
   }
 
-  if (schema.enum !== undefined) {
-    // deno-lint-ignore no-explicit-any
-    return schema.enum.map((v: any) => JSON.stringify(v)).join(" | ");
-  }
-
-  if (schema.type !== undefined) {
-    if (schema.type === "array") {
-      if (Array.isArray(schema.items)) { // tuple
-        return `[${schema.items.map(jsonSchemaToTypeName).join(", ")}]`;
-      }
-
-      return `${jsonSchemaToTypeName(schema.items)}...`;
+  if (TypeGuard.TTuple(schema)) {
+    if (Array.isArray(schema.items)) {
+      return `[${schema.items.map(jsonSchemaToTypeName).join(", ")}]`;
     }
 
+    if (schema.items) {
+      return jsonSchemaToTypeName(schema.items);
+    }
+  }
+
+  if (TypeGuard.TArray(schema)) {
+    return `${jsonSchemaToTypeName(schema.items)}...`;
+  }
+
+  if (schema.type) {
     return schema.type;
   }
 
@@ -109,8 +111,7 @@ function jsonSchemaToTypeName(schema: CustomOptions): string {
 }
 
 export class CliProgram {
-  // deno-lint-ignore no-explicit-any
-  private actions = new Map<string, CliAction<any>>();
+  private actions = new Map<string, CliAction<TProperties>>();
 
   onExit(exitCode: ExitCode) {
     Deno.exit(exitCode.code);
@@ -126,7 +127,8 @@ export class CliProgram {
     command: string,
     action: CliAction<T>,
   ): this {
-    this.actions.set(command, action);
+    // deno-lint-ignore no-explicit-any
+    this.actions.set(command, action as any);
     return this;
   }
 
@@ -141,7 +143,7 @@ ${supportedCommands.map((cmd) => `  - ${cmd}`).join("\n")}`,
     );
   }
 
-  printActionError<P extends TProperties & { [key: string]: CustomOptions }>(
+  printActionError<P extends TProperties>(
     error: string,
     command: string,
     action: CliAction<P>,
@@ -228,18 +230,13 @@ ${actionHelp}`,
       return Deno.exit(1);
     }
 
-    const validationResult = validate(action.argsSchema, args, {
-      coerceTypes: true,
-      strict: "log",
-      allErrors: true,
-    });
-
-    if (validationResult.isSuccess) {
+    if (action.argsCheck.Check(args)) {
+      const decodedArgs = action.argsCheck.Decode(args);
       const abortController = new AbortController();
       const exitCode = await Promise
         .race([
           action.action(
-            validationResult.value,
+            decodedArgs,
             unparsedArgs,
             abortController.signal,
           ),
@@ -253,15 +250,13 @@ ${actionHelp}`,
 
       this.onExit(exitCode);
     } else {
+      const groupedErrors = groupBy(action.argsCheck.Errors(args), (e) => e.path);
+
       this.printActionError(
         `Invalid arguments for command: ${command}\n${
-          validationResult
-            .errorsToString({
-              separator: "\n",
-              dataVar: "    -",
-            })
-            .replaceAll("property", "argument")
-            .replaceAll("    -/", "    - /")
+          Object.values(groupedErrors).map((errors) =>
+            ` > ${errors![0].path.replace(/^\//, "")}:\n${errors!.map((e) => `    - ${e.message}`).join("\n")}`
+          ).join("\n")
         }`,
         command,
         action,

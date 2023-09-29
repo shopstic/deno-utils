@@ -1,1 +1,1 @@
-export * from "https://deno.land/x/k8s@1.27.5/index.ts";
+export * from "https://deno.land/x/k8s@1.28.2/index.ts";

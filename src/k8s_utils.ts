@@ -11,10 +11,12 @@ export type K8sPersistentVolumeAccessMode =
 
 export type K8sImagePullPolicy = "Always" | "Never" | "IfNotPresent";
 
-export const K8sResourceSchema = Type.PartialObject({
+const PartialObject = (...props: Parameters<typeof Type.Object>) => Type.Partial(Type.Object(...props));
+
+export const K8sResourceSchema = PartialObject({
   apiVersion: Type.String(),
   kind: Type.String(),
-  metadata: Type.PartialObject({
+  metadata: PartialObject({
     name: Type.String(),
     namespace: Type.Optional(Type.String()),
     labels: Type.Optional(Type.Record(Type.String(), Type.String())),
@@ -51,21 +53,21 @@ export const K8sCrdKind = K8sKind.CustomResourceDefinition;
 export const K8sCrdApiVersionV1beta1 = "apiextensions.k8s.io/v1beta1";
 export const K8sCrdApiVersionV1 = "apiextensions.k8s.io/v1";
 
-export const K8sCrdV1beta1Schema = Type.PartialObject({
+export const K8sCrdV1beta1Schema = PartialObject({
   apiVersion: Type.Literal(K8sCrdApiVersionV1beta1),
   kind: Type.Literal(K8sCrdKind),
-  metadata: Type.PartialObject({
+  metadata: PartialObject({
     name: Type.String(),
   }),
-  spec: Type.PartialObject({
+  spec: PartialObject({
     group: Type.String(),
-    names: Type.PartialObject({
+    names: PartialObject({
       kind: Type.String(),
     }),
     version: Type.Optional(Type.String()),
-    versions: Type.Optional(Type.Array(Type.PartialObject({
+    versions: Type.Optional(Type.Array(PartialObject({
       name: Type.String(),
-      schema: Type.Optional(Type.PartialObject({
+      schema: Type.Optional(PartialObject({
         openAPIV3Schema: Type.Any(),
       })),
     }))),
@@ -73,20 +75,20 @@ export const K8sCrdV1beta1Schema = Type.PartialObject({
   }),
 });
 
-export const K8sCrdV1Schema = Type.PartialObject({
+export const K8sCrdV1Schema = PartialObject({
   apiVersion: Type.Literal(K8sCrdApiVersionV1),
   kind: Type.Literal(K8sCrdKind),
-  metadata: Type.PartialObject({
+  metadata: PartialObject({
     name: Type.String(),
   }),
-  spec: Type.PartialObject({
+  spec: PartialObject({
     group: Type.String(),
-    names: Type.PartialObject({
+    names: PartialObject({
       kind: Type.String(),
     }),
-    versions: Type.Array(Type.PartialObject({
+    versions: Type.Array(PartialObject({
       name: Type.String(),
-      schema: Type.PartialObject({
+      schema: PartialObject({
         openAPIV3Schema: Type.Any(),
       }),
     })),

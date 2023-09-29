@@ -1,5 +1,4 @@
-import { copy, readAll, readLines, writeAll } from "./deps/std_io.ts";
-import { readerFromStreamReader, writerFromStreamWriter } from "./deps/std_streams.ts";
+import { TextLineStream, toArrayBuffer } from "./deps/std_streams.ts";
 
 const ansiPattern = [
   "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
@@ -19,7 +18,7 @@ export function printOutLines(
   mapper: (line: string) => string = (line) => line,
 ) {
   return async function (readable: ReadableStream<Uint8Array>) {
-    for await (const line of readLines(readerFromStreamReader(readable.getReader()))) {
+    for await (const line of readable.pipeThrough(new TextDecoderStream()).pipeThrough(new TextLineStream())) {
       console.log(mapper(line));
     }
   };
@@ -29,7 +28,7 @@ export function printErrLines(
   mapper: (line: string) => string = (line) => line,
 ) {
   return async function (readable: ReadableStream<Uint8Array>) {
-    for await (const line of readLines(readerFromStreamReader(readable.getReader()))) {
+    for await (const line of readable.pipeThrough(new TextDecoderStream()).pipeThrough(new TextLineStream())) {
       console.error(mapper(line));
     }
   };
@@ -89,7 +88,7 @@ export type StdOutputBehavior = {
 };
 
 export type StdInputBehavior = {
-  pipe: string | Deno.Reader;
+  pipe: string | ReadableStream<Uint8Array>;
 } | {
   inherit: true;
 } | {
@@ -186,17 +185,10 @@ async function _inheritExec(
         return Promise.resolve();
       } else {
         return (async () => {
-          const stdinWriter = child.stdin.getWriter();
-
-          try {
-            if (typeof stdin.pipe === "string") {
-              await writeAll(writerFromStreamWriter(stdinWriter), new TextEncoder().encode(stdin.pipe));
-            } else {
-              await copy(stdin.pipe, writerFromStreamWriter(stdinWriter));
-            }
-          } finally {
-            stdinWriter.releaseLock();
-            await child.stdin.close();
+          if (typeof stdin.pipe === "string") {
+            await ReadableStream.from([new TextEncoder().encode(stdin.pipe)]).pipeTo(child.stdin);
+          } else {
+            await stdin.pipe.pipeTo(child.stdin);
           }
         })();
       }
@@ -297,17 +289,10 @@ export async function captureExec(
         return Promise.resolve();
       } else {
         return (async () => {
-          const stdinWriter = child.stdin.getWriter();
-
-          try {
-            if (typeof stdin.pipe === "string") {
-              await writeAll(writerFromStreamWriter(stdinWriter), new TextEncoder().encode(stdin.pipe));
-            } else {
-              await copy(stdin.pipe, writerFromStreamWriter(stdinWriter));
-            }
-          } finally {
-            stdinWriter.releaseLock();
-            await child.stdin.close();
+          if (typeof stdin.pipe === "string") {
+            await ReadableStream.from([new TextEncoder().encode(stdin.pipe)]).pipeTo(child.stdin);
+          } else {
+            await stdin.pipe.pipeTo(child.stdin);
           }
         })();
       }
@@ -317,14 +302,14 @@ export async function captureExec(
       if ("ignore" in stderr || "inherit" in stderr) {
         return;
       } else if ("capture" in stderr) {
-        return readAll(readerFromStreamReader(child.stderr.getReader()));
+        return toArrayBuffer(child.stderr);
       } else {
         await stderr.read(child.stderr);
         return;
       }
     })();
 
-    const stdoutPromise = readAll(readerFromStreamReader(child.stdout.getReader()));
+    const stdoutPromise = toArrayBuffer(child.stdout);
     await Promise.all([stdinPromise, stderrPromise]);
 
     const { code } = await child.status;
