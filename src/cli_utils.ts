@@ -230,8 +230,17 @@ ${actionHelp}`,
       return Deno.exit(1);
     }
 
-    if (action.argsCheck.Check(args)) {
-      const decodedArgs = action.argsCheck.Decode(args);
+    const transformedArgs = Object.fromEntries(
+      Object.entries(args).map(([key, value]) => {
+        if (TypeGuard.TString(action.argsSchema.properties[key])) {
+          return [key, String(value)];
+        }
+        return [key, value];
+      }),
+    );
+
+    if (action.argsCheck.Check(transformedArgs)) {
+      const decodedArgs = action.argsCheck.Decode(transformedArgs);
       const abortController = new AbortController();
       const exitCode = await Promise
         .race([

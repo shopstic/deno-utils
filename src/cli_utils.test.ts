@@ -7,6 +7,7 @@ Deno.test({
   fn: async () => {
     const run = createCliAction(
       Type.Object({
+        appId: Type.String({ minLength: 1 }),
         hostname: Type.Optional(Type.String({ minLength: 1, examples: ["my.hostname.com"] })),
         port: Type.Optional(Type.Number({ minimum: 0, maximum: 65535, examples: [8080] })),
         proxyTarget: Type.String({ format: "uri" }),
@@ -15,6 +16,7 @@ Deno.test({
       }),
       (
         {
+          appId,
           hostname,
           port,
           proxyTarget,
@@ -23,6 +25,7 @@ Deno.test({
         },
         unparsedArgs,
       ) => {
+        assertEquals(appId, "12345");
         assertEquals(hostname, "foo");
         assertEquals(port, 12345);
         assertEquals(proxyTarget, "http://foo.bar");
@@ -40,6 +43,10 @@ Deno.test({
       .addAction("run", run)
       .run([
         "run",
+        "--someOther",
+        "12345",
+        "--appId",
+        "12345",
         "--hostname",
         "foo",
         "--port",
