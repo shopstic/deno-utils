@@ -1,5 +1,6 @@
-import { assert, assertEquals, assertThrows } from "./deps/std_testing.ts";
+import { assert, assertEquals, assertExists, assertGreater, assertThrows } from "./deps/std_testing.ts";
 import { Static, Type } from "./deps/typebox.ts";
+import { K8sResourceSchema } from "./k8s_utils.ts";
 import { validate, validateDefinition } from "./validation_utils.ts";
 
 const schema = Type.Object({
@@ -22,6 +23,23 @@ Deno.test("validate success", () => {
   });
 });
 
+Deno.test("validate flex object", () => {
+  const value: Static<typeof K8sResourceSchema> = {
+    apiVersion: "foo",
+    kind: "bar",
+    metadata: {
+      name: "baz",
+    },
+    somethingElse: true,
+  };
+  const result = validate(K8sResourceSchema, value);
+
+  assertEquals(result, {
+    isSuccess: true,
+    value,
+  });
+});
+
 Deno.test("validate error", () => {
   const value = {
     foo: "foo",
@@ -30,8 +48,9 @@ Deno.test("validate error", () => {
   };
   const result = validate(schema, value);
 
-  assert(!result.isSuccess);
-  assert("errors" in result && result.errors.length > 0);
+  assert(result.isSuccess === false);
+  assertExists(result.errors);
+  assertGreater(result.errors.length, 0);
 });
 
 const testSchema = {
@@ -65,7 +84,7 @@ Deno.test("validateDefinition should fail on invalid value", () => {
   });
 
   assert(!result.isSuccess);
-  assert("errors" in result && result.errors.length > 0);
+  assertGreater(result.errors.length, 0);
 });
 
 Deno.test("validateDefinition should throw on unknown definition reference", () => {
@@ -94,5 +113,5 @@ Deno.test("validateDefinition should succeed", () => {
   });
 
   assert(result.isSuccess);
-  assert(result.value == value);
+  assertEquals(result.value, value);
 });

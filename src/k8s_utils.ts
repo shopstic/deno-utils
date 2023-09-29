@@ -2,7 +2,7 @@ import type { K8s } from "./deps/k8s_api.ts";
 export type { K8s };
 
 import type { Static } from "./deps/typebox.ts";
-import { Type } from "./deps/typebox.ts";
+import { FlexObject, Type } from "./deps/typebox.ts";
 
 export type K8sPersistentVolumeAccessMode =
   | "ReadWriteOnce"
@@ -11,12 +11,10 @@ export type K8sPersistentVolumeAccessMode =
 
 export type K8sImagePullPolicy = "Always" | "Never" | "IfNotPresent";
 
-const PartialObject = (...props: Parameters<typeof Type.Object>) => Type.Partial(Type.Object(...props));
-
-export const K8sResourceSchema = PartialObject({
+export const K8sResourceSchema = FlexObject({
   apiVersion: Type.String(),
   kind: Type.String(),
-  metadata: PartialObject({
+  metadata: FlexObject({
     name: Type.String(),
     namespace: Type.Optional(Type.String()),
     labels: Type.Optional(Type.Record(Type.String(), Type.String())),
@@ -53,21 +51,21 @@ export const K8sCrdKind = K8sKind.CustomResourceDefinition;
 export const K8sCrdApiVersionV1beta1 = "apiextensions.k8s.io/v1beta1";
 export const K8sCrdApiVersionV1 = "apiextensions.k8s.io/v1";
 
-export const K8sCrdV1beta1Schema = PartialObject({
+export const K8sCrdV1beta1Schema = FlexObject({
   apiVersion: Type.Literal(K8sCrdApiVersionV1beta1),
   kind: Type.Literal(K8sCrdKind),
-  metadata: PartialObject({
+  metadata: FlexObject({
     name: Type.String(),
   }),
-  spec: PartialObject({
+  spec: FlexObject({
     group: Type.String(),
-    names: PartialObject({
+    names: FlexObject({
       kind: Type.String(),
     }),
     version: Type.Optional(Type.String()),
-    versions: Type.Optional(Type.Array(PartialObject({
+    versions: Type.Optional(Type.Array(FlexObject({
       name: Type.String(),
-      schema: Type.Optional(PartialObject({
+      schema: Type.Optional(FlexObject({
         openAPIV3Schema: Type.Any(),
       })),
     }))),
@@ -75,20 +73,20 @@ export const K8sCrdV1beta1Schema = PartialObject({
   }),
 });
 
-export const K8sCrdV1Schema = PartialObject({
+export const K8sCrdV1Schema = FlexObject({
   apiVersion: Type.Literal(K8sCrdApiVersionV1),
   kind: Type.Literal(K8sCrdKind),
-  metadata: PartialObject({
+  metadata: FlexObject({
     name: Type.String(),
   }),
-  spec: PartialObject({
+  spec: FlexObject({
     group: Type.String(),
-    names: PartialObject({
+    names: FlexObject({
       kind: Type.String(),
     }),
-    versions: Type.Array(PartialObject({
+    versions: Type.Array(FlexObject({
       name: Type.String(),
-      schema: PartialObject({
+      schema: FlexObject({
         openAPIV3Schema: Type.Any(),
       }),
     })),
