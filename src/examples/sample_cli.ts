@@ -10,7 +10,7 @@ enum FooBarEnum {
 const foo = createCliAction(
   Type.Object({
     url: Type.String({
-      format: "url",
+      format: "uri",
       description: "Must be a valid URI",
       examples: ["http://foo.bar/baz"],
     }),

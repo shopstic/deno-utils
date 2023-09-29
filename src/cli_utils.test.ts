@@ -9,7 +9,7 @@ Deno.test({
       Type.Object({
         hostname: Type.Optional(Type.String({ minLength: 1, examples: ["my.hostname.com"] })),
         port: Type.Optional(Type.Number({ minimum: 0, maximum: 65535, examples: [8080] })),
-        proxyTarget: Type.String({ format: "url" }),
+        proxyTarget: Type.String({ format: "uri" }),
         maybeArray1: Type.Union([Type.Array(Type.String()), Type.String()]),
         maybeArray2: Type.Union([Type.Array(Type.String()), Type.String()]),
       }),
