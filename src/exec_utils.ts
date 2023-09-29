@@ -18,7 +18,11 @@ export function printOutLines(
   mapper: (line: string) => string = (line) => line,
 ) {
   return async function (readable: ReadableStream<Uint8Array>) {
-    for await (const line of readable.pipeThrough(new TextDecoderStream()).pipeThrough(new TextLineStream())) {
+    for await (
+      const line of readable
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new TextLineStream())
+    ) {
       console.log(mapper(line));
     }
   };
@@ -28,7 +32,11 @@ export function printErrLines(
   mapper: (line: string) => string = (line) => line,
 ) {
   return async function (readable: ReadableStream<Uint8Array>) {
-    for await (const line of readable.pipeThrough(new TextDecoderStream()).pipeThrough(new TextLineStream())) {
+    for await (
+      const line of readable
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough(new TextLineStream())
+    ) {
       console.error(mapper(line));
     }
   };
@@ -40,7 +48,7 @@ export class DenoRunError extends Error {
 
   constructor(
     error: Error,
-    public command: Deno.RunOptions["cmd"],
+    public command: string[],
   ) {
     super(error.message);
     this.name = error.name;
@@ -53,7 +61,7 @@ export class DenoRunError extends Error {
 export class NonZeroExitError extends Error {
   constructor(
     message: string,
-    public command: Deno.RunOptions["cmd"],
+    public command: string[],
     public exitCode: number,
     public output?: {
       out: string;
@@ -68,7 +76,7 @@ export class NonZeroExitError extends Error {
 export class ExecAbortedError extends Error {
   constructor(
     message: string,
-    public command: Deno.RunOptions["cmd"],
+    public command: string[],
     public output?: {
       out: string;
       err: string;
