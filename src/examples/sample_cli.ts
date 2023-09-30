@@ -1,6 +1,7 @@
 import { CliProgram, createCliAction, ExitCode } from "../cli_utils.ts";
 import { Type } from "../deps/typebox.ts";
-import { delay } from "../async_utils.ts";
+import { deferred, delay } from "../async_utils.ts";
+import { resolve } from "https://esm.sh/v132/uri-js@4.4.1/dist/es5/uri.all.js";
 
 enum FooBarEnum {
   FOO = "FOO",
@@ -13,6 +14,11 @@ const foo = createCliAction(
       format: "uri",
       description: "Must be a valid URI",
       examples: ["http://foo.bar/baz"],
+    }),
+    port: Type.Integer({
+      minimum: 1,
+      maximum: 65535,
+      examples: [9876],
     }),
     source: Type.Union([Type.Array(Type.String()), Type.String()], {
       description: "Can be repeated multiple times",
@@ -65,11 +71,27 @@ const bar = createCliAction(
       default: false,
     })),
   }),
-  async (args) => {
+  async (args, _, signal) => {
     console.log("Got args", args);
-    console.log("Will exit in 1 second");
-    await delay(1000);
-    return ExitCode.Zero;
+    console.log("Will exit upon abort signal");
+
+    const promise = new Promise<void>((resolve) => {
+      signal.addEventListener("abort", () => {
+        console.log("Got abort signal");
+        resolve();
+      }, { once: true });
+    });
+
+    const timer = setInterval(() => {
+      console.log("Still waiting...");
+    }, 1000);
+
+    await promise;
+    clearInterval(timer);
+
+    console.log("OK! Going to exit in 1 second");
+    await delay(2000);
+    return ExitCode.One;
   },
 );
 

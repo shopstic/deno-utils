@@ -44,42 +44,6 @@ export class ExitCode {
   }
 }
 
-export function waitForSignal(
-  signal: "SIGINT" | "SIGTERM",
-  abortSignal: AbortSignal,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    function cleanUp() {
-      abortSignal.removeEventListener("abort", onAbort);
-      Deno.removeSignalListener(signal, onSignal);
-    }
-
-    function onAbort(error: unknown) {
-      cleanUp();
-      reject(error);
-    }
-
-    function onSignal() {
-      cleanUp();
-      resolve(undefined);
-    }
-
-    // deno-lint-ignore ban-ts-comment
-    // @ts-ignore
-    Deno.addSignalListener(signal, onSignal);
-    abortSignal.addEventListener("abort", onAbort);
-  });
-}
-
-async function waitForExitSignal(abortSignal: AbortSignal): Promise<ExitCode> {
-  await Promise.race([
-    waitForSignal("SIGINT", abortSignal),
-    waitForSignal("SIGTERM", abortSignal),
-  ]);
-
-  return new ExitCode(123);
-}
-
 function jsonSchemaToTypeName(schema: TSchema): string {
   if (schema.const) {
     return JSON.stringify(schema.const);
@@ -232,9 +196,20 @@ ${actionHelp}`,
 
     const transformedArgs = Object.fromEntries(
       Object.entries(args).map(([key, value]) => {
-        if (TypeGuard.TString(action.argsSchema.properties[key])) {
+        const schema = action.argsSchema.properties[key];
+
+        if (TypeGuard.TString(schema)) {
           return [key, String(value)];
         }
+
+        if (TypeGuard.TBoolean(schema)) {
+          return [key, Boolean(value)];
+        }
+
+        if (TypeGuard.TBigInt(schema)) {
+          return [key, BigInt(value)];
+        }
+
         return [key, value];
       }),
     );
@@ -242,22 +217,31 @@ ${actionHelp}`,
     if (action.argsCheck.Check(transformedArgs)) {
       const decodedArgs = action.argsCheck.Decode(transformedArgs);
       const abortController = new AbortController();
-      const exitCode = await Promise
-        .race([
-          action.action(
-            decodedArgs,
-            unparsedArgs,
-            abortController.signal,
-          ),
-          waitForExitSignal(abortController.signal),
-        ])
-        .catch((e) => {
-          console.error("Unhandled error", JSON.stringify(e, null, 2));
-          throw e;
-        })
-        .finally(() => abortController.abort());
+      const signals: Deno.Signal[] = ["SIGINT", "SIGTERM"];
 
-      this.onExit(exitCode);
+      const onSignal = () => {
+        abortController.abort();
+      };
+
+      signals.forEach((signal) => {
+        Deno.addSignalListener(signal, onSignal);
+      });
+
+      try {
+        const exitCode = await action.action(
+          decodedArgs,
+          unparsedArgs,
+          abortController.signal,
+        );
+        this.onExit(exitCode);
+      } catch (e) {
+        console.error("Unhandled error", JSON.stringify(e, null, 2));
+        throw e;
+      } finally {
+        signals.forEach((signal) => {
+          Deno.removeSignalListener(signal, onSignal);
+        });
+      }
     } else {
       const groupedErrors = groupBy(action.argsCheck.Errors(args), (e) => e.path);
 
