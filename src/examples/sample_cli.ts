@@ -1,7 +1,6 @@
 import { CliProgram, createCliAction, ExitCode } from "../cli_utils.ts";
 import { Type } from "../deps/typebox.ts";
-import { deferred, delay } from "../async_utils.ts";
-import { resolve } from "https://esm.sh/v132/uri-js@4.4.1/dist/es5/uri.all.js";
+import { delay } from "../async_utils.ts";
 
 enum FooBarEnum {
   FOO = "FOO",
