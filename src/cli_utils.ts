@@ -195,8 +195,14 @@ ${actionHelp}`,
     }
 
     const transformedArgs = Object.fromEntries(
-      Object.entries(action.argsSchema.properties).map(([key, schema]) => {
-        return [key, Value.Convert(schema, args[key])];
+      Object.entries(args).map(([key, value]) => {
+        const schema = action.argsSchema.properties[key];
+
+        if (schema) {
+          return [key, Value.Convert(schema, value)];
+        }
+
+        return [key, value];
       }),
     );
 
