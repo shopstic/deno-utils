@@ -1,6 +1,6 @@
 import { groupBy } from "./deps/std_collections.ts";
 import { parseCliArgs } from "./deps/std_flags.ts";
-import { Static, TObject, TProperties, TSchema, TypeCheck, TypeCompiler, TypeGuard } from "./deps/typebox.ts";
+import { Static, TObject, TProperties, TSchema, TypeCheck, TypeCompiler, TypeGuard, Value } from "./deps/typebox.ts";
 
 interface CliAction<T extends TProperties> {
   argsSchema: TObject<T>;
@@ -195,22 +195,8 @@ ${actionHelp}`,
     }
 
     const transformedArgs = Object.fromEntries(
-      Object.entries(args).map(([key, value]) => {
-        const schema = action.argsSchema.properties[key];
-
-        if (TypeGuard.TString(schema)) {
-          return [key, String(value)];
-        }
-
-        if (TypeGuard.TBoolean(schema)) {
-          return [key, Boolean(value)];
-        }
-
-        if (TypeGuard.TBigInt(schema)) {
-          return [key, BigInt(value)];
-        }
-
-        return [key, value];
+      Object.entries(action.argsSchema.properties).map(([key, schema]) => {
+        return [key, Value.Convert(schema, args[key])];
       }),
     );
 

@@ -30,7 +30,7 @@ Deno.test({
         assertEquals(port, 12345);
         assertEquals(proxyTarget, "http://foo.bar");
         assertEquals(unparsedArgs, ["some", "remaining", "args"]);
-        assertEquals(maybeArray1, "one");
+        assertEquals(maybeArray1, "1234");
         assertEquals(maybeArray2, ["one", "two", "three"]);
 
         return Promise.resolve(ExitCode.Zero);
@@ -54,7 +54,7 @@ Deno.test({
         "--proxyTarget",
         "http://foo.bar",
         "--maybeArray1",
-        "one",
+        "1234",
         "--maybeArray2",
         "one",
         "--maybeArray2",
