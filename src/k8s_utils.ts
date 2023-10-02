@@ -128,6 +128,82 @@ export type K8sContainer = K8s["core.v1.Container"];
 export type K8sEnvVar = K8s["core.v1.EnvVar"];
 export type K8sProbe = K8s["core.v1.Probe"];
 
+export function isK8sNamespace(resource: K8sResource): resource is K8sNamespace {
+  return resource.kind === K8sKind.Namespace;
+}
+
+export function isK8sService(resource: K8sResource): resource is K8sService {
+  return resource.kind === K8sKind.Service;
+}
+
+export function isK8sSecret(resource: K8sResource): resource is K8sSecret {
+  return resource.kind === K8sKind.Secret;
+}
+
+export function isK8sConfigMap(resource: K8sResource): resource is K8sConfigMap {
+  return resource.kind === K8sKind.ConfigMap;
+}
+
+export function isK8sDaemonSet(resource: K8sResource): resource is K8sDaemonSet {
+  return resource.kind === K8sKind.DaemonSet;
+}
+
+export function isK8sDeployment(resource: K8sResource): resource is K8sDeployment {
+  return resource.kind === K8sKind.Deployment;
+}
+
+export function isK8sPodDisruptionBudget(resource: K8sResource): resource is K8sPodDisruptionBudget {
+  return resource.kind === K8sKind.PodDisruptionBudget;
+}
+
+export function isK8sStatefulSet(resource: K8sResource): resource is K8sStatefulSet {
+  return resource.kind === K8sKind.StatefulSet;
+}
+
+export function isK8sJob(resource: K8sResource): resource is K8sJob {
+  return resource.kind === K8sKind.Job;
+}
+
+export function isK8sCronJob(resource: K8sResource): resource is K8sCronJob {
+  return resource.kind === K8sKind.CronJob;
+}
+
+export function isK8sStorageClass(resource: K8sResource): resource is K8sStorageClass {
+  return resource.kind === K8sKind.StorageClass;
+}
+
+export function isK8sIngress(resource: K8sResource): resource is K8sIngress {
+  return resource.kind === K8sKind.Ingress;
+}
+
+export function isK8sPersistentVolume(resource: K8sResource): resource is K8sPersistentVolume {
+  return resource.kind === K8sKind.PersistentVolume;
+}
+
+export function isK8sPersistentVolumeClaim(resource: K8sResource): resource is K8sPersistentVolumeClaim {
+  return resource.kind === K8sKind.PersistentVolumeClaim;
+}
+
+export function isK8sRole(resource: K8sResource): resource is K8sRole {
+  return resource.kind === K8sKind.Role;
+}
+
+export function isK8sRoleBinding(resource: K8sResource): resource is K8sRoleBinding {
+  return resource.kind === K8sKind.RoleBinding;
+}
+
+export function isK8sClusterRole(resource: K8sResource): resource is K8sClusterRole {
+  return resource.kind === K8sKind.ClusterRole;
+}
+
+export function isK8sClusterRoleBinding(resource: K8sResource): resource is K8sClusterRoleBinding {
+  return resource.kind === K8sKind.ClusterRoleBinding;
+}
+
+export function isK8sServiceAccount(resource: K8sResource): resource is K8sServiceAccount {
+  return resource.kind === K8sKind.ServiceAccount;
+}
+
 export function createK8sNamespace(
   ns: K8s["core.v1.Namespace"] & K8sResourceMetadata,
 ): K8sNamespace {
