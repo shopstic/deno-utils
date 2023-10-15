@@ -318,3 +318,81 @@ Deno.test("setPaused() pauses and resumes the queue", async () => {
 
   assertEquals(collected, [1, 2, 3, 4]);
 });
+
+Deno.test("initialDelay() aborts the delay timer on complete", async () => {
+  const queue = new AsyncQueue<number>(10);
+
+  await queue.enqueue(1);
+  await queue.enqueue(2);
+  await queue.enqueue(3);
+  await queue.enqueue(4);
+
+  const delayedQueue = queue.initialDelay(1000);
+  const collectedPromise = delayedQueue.collectArray();
+
+  delayedQueue.complete();
+
+  assertEquals(await collectedPromise, []);
+});
+
+Deno.test("switchMap() aborts a prior outstanding promise before starting a new one", async () => {
+  const queue = new AsyncQueue<number>(10);
+
+  const collectedPromise = queue
+    .switchMap(async (n, signal) => {
+      await delay(100, { signal });
+      return n * 2;
+    })
+    .collectArray();
+
+  await queue.enqueue(1);
+  await delay(10);
+  await queue.enqueue(2);
+  await delay(10);
+  await queue.enqueue(3);
+  await delay(10);
+  await queue.enqueue(4);
+  queue.complete();
+
+  assertEquals(await collectedPromise, [8]);
+});
+
+Deno.test("concurrentMap() aborts all outstanding promises", async () => {
+  const queue = new AsyncQueue<number>(20);
+
+  for (let i = 0; i < 20; i++) {
+    await queue.enqueue(i);
+  }
+
+  let abortCount = 0;
+
+  const mappedQueue = queue
+    .concurrentMap(10, async (n, signal) => {
+      try {
+        await delay(n < 15 ? 10 : 1000, { signal });
+        return n * 2;
+      } catch (e) {
+        if (e.name === "AbortError") {
+          abortCount++;
+        }
+        throw e;
+      }
+    });
+
+  assertEquals((await mappedQueue.take(10).detach().collectArray()).length, 10);
+
+  const collectedPromise = mappedQueue.collectArray();
+
+  await delay(100);
+
+  mappedQueue.complete();
+
+  assertEquals(await collectedPromise, [
+    20,
+    22,
+    24,
+    26,
+    28,
+  ]);
+  assertEquals(abortCount, 5);
+});

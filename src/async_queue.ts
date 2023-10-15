@@ -75,8 +75,8 @@ export abstract class AsyncReadonlyQueue<T> {
     })();
   }
 
-  protected _spawn<U>(name: string, bufferSize?: number): AsyncQueue<U> {
-    return new AsyncQueue<U>(bufferSize ?? 1, { name }, [this]);
+  protected _spawn<U>(name: string, bufferSize?: number, onComplete?: () => void): AsyncQueue<U> {
+    return new AsyncQueue<U>(bufferSize ?? 1, { name, onComplete }, [this]);
   }
 
   /**
@@ -87,13 +87,16 @@ export abstract class AsyncReadonlyQueue<T> {
    */
   transform<U>(
     name: string,
-    fn: (it: AsyncIterable<T>) => AsyncIterable<U>,
+    fn: (it: AsyncIterable<T>, signal: AbortSignal) => AsyncIterable<U>,
     bufferSize?: number,
   ): AsyncReadonlyQueue<U> {
-    const mappedQueue = this._spawn<U>(name, bufferSize);
+    const abortController = new AbortController();
+    const mappedQueue = this._spawn<U>(name, bufferSize, () => {
+      abortController.abort();
+    });
 
     (async () => {
-      for await (const newItem of fn(this.items())) {
+      for await (const newItem of fn(this.items(), abortController.signal)) {
         if (mappedQueue.isCompleted) return;
         await mappedQueue.enqueue(newItem);
         if (mappedQueue.isCompleted) return;
@@ -167,10 +170,17 @@ export abstract class AsyncReadonlyQueue<T> {
     });
   }
 
-  tap(fn: (value: T) => Promise<void> | void): AsyncReadonlyQueue<T> {
-    return this.transform("tap", async function* (it) {
+  tap(fn: (value: T, signal: AbortSignal) => Promise<void> | void): AsyncReadonlyQueue<T> {
+    return this.transform("tap", async function* (it, signal) {
       for await (const item of it) {
-        await fn(item);
+        try {
+          await fn(item, signal);
+        } catch (e) {
+          if (e.name === "AbortError") {
+            return;
+          }
+          throw e;
+        }
         yield item;
       }
     });
@@ -187,10 +197,17 @@ export abstract class AsyncReadonlyQueue<T> {
    * @returns A new `AsyncQueue` containing the mapped items.
    */
 
-  map<U>(fn: (value: T) => Promise<U> | U): AsyncReadonlyQueue<U> {
-    return this.transform("map", async function* (it) {
+  map<U>(fn: (value: T, signal: AbortSignal) => Promise<U> | U): AsyncReadonlyQueue<U> {
+    return this.transform("map", async function* (it, signal) {
       for await (const item of it) {
-        yield await fn(item);
+        try {
+          yield await fn(item, signal);
+        } catch (e) {
+          if (e.name === "AbortError") {
+            return;
+          }
+          throw e;
+        }
       }
     });
   }
@@ -198,16 +215,64 @@ export abstract class AsyncReadonlyQueue<T> {
   /**
    *  It is similar to a map, but it transforms elements statefully. statefulMap allows us to map and accumulate in the same operation.
    */
-  statefulMap<S, U>(state: S, fn: (accumulator: S, value: T) => Promise<[S, U]> | [S, U]): AsyncReadonlyQueue<U> {
+  statefulMap<S, U>(
+    state: S,
+    fn: (accumulator: S, value: T, signal: AbortSignal) => Promise<[S, U]> | [S, U],
+  ): AsyncReadonlyQueue<U> {
     let accumulator = state;
 
-    return this.transform("statefulMap", async function* (it) {
+    return this.transform("statefulMap", async function* (it, signal) {
       for await (const item of it) {
-        const [newAccumulator, newItem] = await fn(accumulator, item);
+        const [newAccumulator, newItem] = await fn(accumulator, item, signal);
         accumulator = newAccumulator;
         yield newItem;
       }
     });
+  }
+
+  switchMap<U>(fn: (value: T, signal: AbortSignal) => Promise<U>) {
+    let currentAc = new AbortController();
+    const mappedQueue = this._spawn<U>("switchMap", 1, () => {
+      currentAc.abort();
+    });
+
+    (async () => {
+      let currentPromise: Promise<boolean> | undefined = undefined;
+
+      for await (const newItem of this.items()) {
+        if (mappedQueue.isCompleted) return;
+
+        if (currentPromise !== undefined) {
+          currentAc.abort();
+          await currentPromise;
+        }
+
+        if (mappedQueue.isCompleted) return;
+
+        currentAc = new AbortController();
+        currentPromise = fn(newItem, currentAc.signal)
+          .then((toEmit) => {
+            if (!mappedQueue.isCompleted) {
+              return mappedQueue.enqueue(toEmit);
+            }
+            return false;
+          })
+          .catch((e) => {
+            if (e.name === "AbortError") {
+              return false;
+            }
+            return Promise.reject(e);
+          });
+      }
+
+      if (currentPromise) {
+        await currentPromise;
+      }
+
+      mappedQueue.complete();
+    })();
+
+    return mappedQueue;
   }
 
   /**
@@ -218,17 +283,31 @@ export abstract class AsyncReadonlyQueue<T> {
    * @param fn - A function that takes an item of type T and returns a new item of type U.
    * @returns A new `AsyncQueue` containing the mapped items.
    */
-  concurrentMap<U>(concurrencyLimit: number, fn: (value: T) => Promise<U> | U): AsyncReadonlyQueue<U> {
+  concurrentMap<U>(
+    concurrencyLimit: number,
+    fn: (value: T, signal: AbortSignal) => Promise<U> | U,
+  ): AsyncReadonlyQueue<U> {
     if (concurrencyLimit < 1) {
       throw new Error("concurrentMap() concurrencyLimit must be greater than 0, got " + concurrencyLimit);
     }
 
-    const mappedQueue = this._spawn<U>(`concurrentMap(${concurrencyLimit})`);
+    const abortController = new AbortController();
+    const mappedQueue = this._spawn<U>(`concurrentMap(${concurrencyLimit})`, 1, () => abortController.abort());
     const semaphore = new Semaphore(concurrencyLimit);
 
     const handleItem = async (item: T) => {
       if (mappedQueue.isCompleted) return;
-      const newItem = await fn(item);
+      let newItem: U;
+
+      try {
+        newItem = await fn(item, abortController.signal);
+      } catch (e) {
+        if (e.name === "AbortError") {
+          return;
+        }
+        throw e;
+      }
+
       if (mappedQueue.isCompleted) return;
       await mappedQueue.enqueue(newItem);
     };
@@ -267,11 +346,18 @@ export abstract class AsyncReadonlyQueue<T> {
    * @returns A new `AsyncQueue` containing only the items that pass the filter function.
    */
 
-  filter<U>(fn: (value: T) => Promise<boolean> | boolean): AsyncReadonlyQueue<T> {
-    return this.transform("filter", async function* (it) {
+  filter<U>(fn: (value: T, signal: AbortSignal) => Promise<boolean> | boolean): AsyncReadonlyQueue<T> {
+    return this.transform("filter", async function* (it, signal) {
       for await (const item of it) {
-        if (await fn(item)) {
-          yield item;
+        try {
+          if (await fn(item, signal)) {
+            yield item;
+          }
+        } catch (e) {
+          if (e.name === "AbortError") {
+            return;
+          }
+          throw e;
         }
       }
     });
@@ -309,12 +395,22 @@ export abstract class AsyncReadonlyQueue<T> {
    *
    * @returns A new `AsyncQueue` containing the accumulated values.
    */
-  scan<U>(initialValue: U, fn: (accumulator: U, value: T) => Promise<U> | U): AsyncReadonlyQueue<U> {
+  scan<U>(
+    initialValue: U,
+    fn: (accumulator: U, value: T, signal: AbortSignal) => Promise<U> | U,
+  ): AsyncReadonlyQueue<U> {
     let accumulator = initialValue;
 
-    return this.transform("scan", async function* (it) {
+    return this.transform("scan", async function* (it, signal) {
       for await (const item of it) {
-        accumulator = await fn(accumulator, item);
+        try {
+          accumulator = await fn(accumulator, item, signal);
+        } catch (e) {
+          if (e.name === "AbortError") {
+            return;
+          }
+          throw e;
+        }
         yield accumulator;
       }
     });
@@ -344,15 +440,30 @@ export abstract class AsyncReadonlyQueue<T> {
     return conflatedQueue;
   }
 
-  conflateWithSeed<U>(seed: U, reducer: (prior: U, next: T) => Promise<U> | U): AsyncReadonlyQueue<U> {
+  conflateWithSeed<U>(
+    seed: U,
+    reducer: (prior: U, next: T, signal: AbortSignal) => Promise<U> | U,
+  ): AsyncReadonlyQueue<U> {
     let accumulator: U = seed;
 
-    const conflatedQueue = new AsyncKeepLastQueue<U>("conflateWithSeed", this._maxBufferSize);
+    const abortController = new AbortController();
+    const conflatedQueue = new AsyncKeepLastQueue<U>(
+      "conflateWithSeed",
+      this._maxBufferSize,
+      () => abortController.abort(),
+    );
 
     (async () => {
       for await (const item of this.items()) {
         if (conflatedQueue.isCompleted) return;
-        accumulator = await reducer(accumulator, item);
+        try {
+          accumulator = await reducer(accumulator, item, abortController.signal);
+        } catch (e) {
+          if (e.name === "AbortError") {
+            return;
+          }
+          throw e;
+        }
 
         conflatedQueue.accumulate(accumulator);
         if (conflatedQueue.isCompleted) return;
@@ -420,7 +531,7 @@ export abstract class AsyncReadonlyQueue<T> {
     let tokens = count;
     let lastRefillTime = performance.now();
 
-    return this.transform("throttleWithStats", async function* (it) {
+    return this.transform("throttleWithStats", async function* (it, signal) {
       for await (const item of it) {
         // Emit item and consume a token
         yield {
@@ -441,7 +552,16 @@ export abstract class AsyncReadonlyQueue<T> {
         // If no tokens available, wait
         if (tokens <= 0) {
           const remainingTime = perDurationMs - timeSinceLastRefill;
-          await delay(remainingTime);
+
+          try {
+            await delay(remainingTime, { signal });
+          } catch (e) {
+            // Ignore abort exception
+            if (e.name === "AbortError") {
+              return;
+            }
+            throw e;
+          }
 
           // Refill tokens after waiting
           tokens = count;
@@ -470,11 +590,19 @@ export abstract class AsyncReadonlyQueue<T> {
     }
 
     let isFirst = true;
-    return this.transform("initialDelay", async function* (it) {
+    return this.transform("initialDelay", async function* (it, signal) {
       for await (const item of it) {
         if (isFirst) {
           isFirst = false;
-          await delay(durationMs);
+          try {
+            await delay(durationMs, { signal });
+          } catch (e) {
+            // Ignore abort exception
+            if (e.name === "AbortError") {
+              return;
+            }
+            throw e;
+          }
         }
         yield item;
       }
@@ -725,7 +853,7 @@ export class AsyncQueue<T> extends AsyncReadonlyQueue<T> {
 
   async *items(): AsyncGenerator<T> {
     if (this._isCompleted && this._buffer.length === 0) {
-      throw new Error("Trying to iterate items of an already completed, empty queue");
+      throw new Error(`[${this._name}] Trying to iterate items of an already completed, empty queue`);
     }
 
     while (true) {
