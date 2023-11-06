@@ -1,13 +1,13 @@
-export * from "https://deno.land/x/typebox_deno@0.31.17-2/src/typebox.ts";
-export * from "https://deno.land/x/typebox_deno@0.31.17-2/src/compiler/index.ts";
-export { Value } from "https://deno.land/x/typebox_deno@0.31.17-2/src/value/index.ts";
-export { TransformDecodeCheckError } from "https://deno.land/x/typebox_deno@0.31.17-2/src/value/transform.ts";
+export * from "https://deno.land/x/typebox_deno@0.31.22/src/typebox.ts";
+export * from "https://deno.land/x/typebox_deno@0.31.22/src/compiler/index.ts";
+export { Value } from "https://deno.land/x/typebox_deno@0.31.22/src/value/index.ts";
+export { TransformDecodeCheckError } from "https://deno.land/x/typebox_deno@0.31.22/src/value/transform.ts";
 import {
   FormatRegistry,
   ObjectOptions,
   TProperties,
   Type,
-} from "https://deno.land/x/typebox_deno@0.31.17-2/src/typebox.ts";
+} from "https://deno.land/x/typebox_deno@0.31.22/src/typebox.ts";
 import {
   IsDate,
   IsDateTime,
@@ -17,7 +17,7 @@ import {
   IsTime,
   IsUrl,
   IsUuid,
-} from "https://deno.land/x/typebox_deno@0.31.17-2/examples/formats/index.ts";
+} from "https://deno.land/x/typebox_deno@0.31.22/examples/formats/index.ts";
 
 const UriRegex = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/)?[^\s]*$/i;
 
