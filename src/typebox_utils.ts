@@ -1,4 +1,4 @@
-import { TSchema, Type, TypeCompiler } from "./deps/typebox.ts";
+import { TSchema, Type } from "./deps/typebox.ts";
 
 export const NonEmptyString = (props?: Parameters<typeof Type.String>[0]) => Type.String({ minLength: 1, ...props });
 
