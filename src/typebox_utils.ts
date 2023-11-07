@@ -1,4 +1,4 @@
-import { TSchema, Type } from "./deps/typebox.ts";
+import { TSchema, Type, TypeCompiler } from "./deps/typebox.ts";
 
 export const NonEmptyString = (props?: Parameters<typeof Type.String>[0]) => Type.String({ minLength: 1, ...props });
 
@@ -11,3 +11,10 @@ export const NonNegInt = (props?: Parameters<typeof Type.Integer>[0]) =>
 export const Maybe = <T extends TSchema>(schema: T) => Type.Union([schema, Type.Undefined()]);
 
 export const Nullable = <T extends TSchema>(schema: T) => Type.Union([schema, Type.Null()]);
+
+export const DateTimeString = (props?: Parameters<typeof Type.String>[0]) =>
+  Type.Unsafe<Date>(
+    Type.Transform(Type.String({ format: "date-time", ...props }))
+      .Decode((value) => new Date(value))
+      .Encode((value) => value.toISOString()),
+  );
