@@ -44,3 +44,6 @@ export class Logger {
 }
 
 export const DefaultLogger = new Logger(console.error.bind(console), levelValue);
+export const DefaultLoggerWithTimestamp = DefaultLogger.transform((log) => (...args: unknown[]) => {
+  return log(new Date().toISOString(), ...args);
+});
