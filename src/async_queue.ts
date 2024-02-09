@@ -475,6 +475,50 @@ export abstract class AsyncReadonlyQueue<T> {
     return conflatedQueue;
   }
 
+  conflateWithSeedFn<U>(
+    seedFn: (next: T, signal: AbortSignal) => Promise<U> | U,
+    reducer: (prior: U, next: T, signal: AbortSignal) => Promise<U> | U,
+  ): AsyncReadonlyQueue<U> {
+    let accumulator: U | undefined;
+
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    const conflatedQueue = new AsyncKeepLastQueue<U>(
+      "conflateWithSeedFn",
+      this._maxBufferSize,
+      () => abortController.abort(),
+      undefined,
+      () => {
+        accumulator = undefined;
+      },
+    );
+
+    (async () => {
+      for await (const item of this.items()) {
+        if (conflatedQueue.isCompleted) return;
+        try {
+          if (accumulator === undefined) {
+            accumulator = await seedFn(item, signal);
+          } else {
+            accumulator = await reducer(accumulator, item, signal);
+          }
+        } catch (e) {
+          if (e.name === "AbortError") {
+            return;
+          }
+          throw e;
+        }
+
+        conflatedQueue.accumulate(accumulator);
+        if (conflatedQueue.isCompleted) return;
+      }
+
+      conflatedQueue.complete();
+    })();
+
+    return conflatedQueue;
+  }
+
   debounce(durationMs: number): AsyncReadonlyQueue<T> {
     if (durationMs < 1) {
       throw new Error("debounce() durationMs must be greater than 0, got " + durationMs);
@@ -701,6 +745,16 @@ export class AsyncKeepLastQueue<T> extends AsyncReadonlyQueue<T> {
   protected _isItemPendingRead = false;
   protected _isPulling = false;
 
+  constructor(
+    protected _name: string,
+    protected _maxBufferSize: number,
+    protected _onComplete?: () => void,
+    protected _parents?: AsyncReadonlyQueue<unknown>[],
+    protected _onEmit?: () => void,
+  ) {
+    super(_name, _maxBufferSize, _onComplete, _parents);
+  }
+
   accumulate(item: T) {
     this._isItemPendingRead = true;
 
@@ -722,6 +776,7 @@ export class AsyncKeepLastQueue<T> extends AsyncReadonlyQueue<T> {
 
       this._isItemPendingRead = false;
 
+      this._onEmit?.();
       yield next;
     }
   }

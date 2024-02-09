@@ -149,6 +149,22 @@ Deno.test("conflate() basic", async () => {
   assertEquals(results, [1, 4]);
 });
 
+Deno.test("conflateWithSeedFn() basic", async () => {
+  const queue = new AsyncQueue<number>(10);
+
+  await queue.enqueue(1);
+  await queue.enqueue(2);
+  await queue.enqueue(3);
+  await queue.enqueue(4);
+
+  const conflatedQueue = queue.conflateWithSeedFn((v) => [v], (a, b) => [...a, b]);
+
+  queue.complete();
+
+  const results = await conflatedQueue.tap(() => delay(100)).collectArray();
+  assertEquals(results, [[1], [2, 3, 4]]);
+});
+
 Deno.test("debounce() basic", async () => {
   const queue = new AsyncQueue<number>(10);
   const debouncedQueue = queue.debounce(100);
