@@ -416,10 +416,16 @@ export abstract class AsyncReadonlyQueue<T> {
     });
   }
 
-  conflate<U>(reducer: (prior: T, next: T) => Promise<T> | T): AsyncReadonlyQueue<T> {
+  conflate<U>(reducer: (prior: T, next: T, signal: AbortSignal) => Promise<T> | T): AsyncReadonlyQueue<T> {
     let accumulator: T | undefined = undefined;
 
-    const conflatedQueue = new AsyncKeepLastQueue<T>("conflate", this._maxBufferSize);
+    const abortController = new AbortController();
+    const conflatedQueue = new AsyncKeepLastQueue<T>(
+      "conflate",
+      this._maxBufferSize,
+      () => abortController.abort(),
+      [this],
+    );
 
     (async () => {
       for await (const item of this.items()) {
@@ -427,7 +433,7 @@ export abstract class AsyncReadonlyQueue<T> {
         if (accumulator === undefined) {
           accumulator = item;
         } else {
-          accumulator = await reducer(accumulator, item);
+          accumulator = await reducer(accumulator, item, abortController.signal);
         }
 
         conflatedQueue.accumulate(accumulator);
@@ -451,6 +457,7 @@ export abstract class AsyncReadonlyQueue<T> {
       "conflateWithSeed",
       this._maxBufferSize,
       () => abortController.abort(),
+      [this],
     );
 
     (async () => {
@@ -487,7 +494,7 @@ export abstract class AsyncReadonlyQueue<T> {
       "conflateWithSeedFn",
       this._maxBufferSize,
       () => abortController.abort(),
-      undefined,
+      [this],
       () => {
         accumulator = undefined;
       },
@@ -527,7 +534,12 @@ export abstract class AsyncReadonlyQueue<T> {
     let lastItem: T | undefined = undefined;
     let timer: number | undefined = undefined;
 
-    const debouncedQueue = new AsyncKeepLastQueue<T>("debounce", this._maxBufferSize);
+    const debouncedQueue = new AsyncKeepLastQueue<T>(
+      "debounce",
+      this._maxBufferSize,
+      undefined,
+      [this],
+    );
 
     (async () => {
       for await (const item of this.items()) {
