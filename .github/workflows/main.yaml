@@ -13,7 +13,7 @@ jobs:
     environment:
       name: main
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build dev env
         run: nix build -L -v --no-link
