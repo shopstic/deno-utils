@@ -6,7 +6,7 @@ export enum LogLevel {
   Debug = 4,
 }
 
-const logLevelMap: Record<string, LogLevel> = {
+export const logLevelMap: Record<string, LogLevel> = {
   none: LogLevel.None,
   error: LogLevel.Error,
   warn: LogLevel.Warn,
@@ -14,11 +14,11 @@ const logLevelMap: Record<string, LogLevel> = {
   debug: LogLevel.Debug,
 };
 
-const levelName = (Deno.env.get("LOG_LEVEL") ?? "info").toLowerCase();
-const levelValue = logLevelMap[levelName];
+export const logLevelName = (Deno.env.get("LOG_LEVEL") ?? "info").toLowerCase();
+export const logLevelValue = logLevelMap[logLevelName];
 
-if (levelValue === undefined) {
-  throw new Error(`Invalid LOG_LEVEL value: ${levelName}. Valid values are: ${Object.keys(logLevelMap).join(", ")}`);
+if (logLevelValue === undefined) {
+  throw new Error(`Invalid LOG_LEVEL value: ${logLevelName}. Valid values are: ${Object.keys(logLevelMap).join(", ")}`);
 }
 
 export class Logger {
@@ -43,7 +43,7 @@ export class Logger {
   }
 }
 
-export const DefaultLogger = new Logger(console.error.bind(console), levelValue);
+export const DefaultLogger = new Logger(console.error.bind(console), logLevelValue);
 export const DefaultLoggerWithTimestamp = DefaultLogger.transform((log) => (...args: unknown[]) => {
   return log(new Date().toISOString(), ...args);
 });
